@@ -1,0 +1,7 @@
+{
+  "name": "@agent-system/extension-gitlab",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "GitLab Agent System Extension 工作區；產品內容由其負責票券交付。"
+}

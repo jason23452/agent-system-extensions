@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "agent-system.extension-source-sync.v1",
+  "source": { "status": "not-configured", "desiredUrl": null },
+  "targets": {
+    "main": {
+      "appliedSourceUrl": null,
+      "appliedRevision": "rev-main-1",
+      "contentSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "readiness": "ready"
+    },
+    "workflow-test": {
+      "appliedSourceUrl": null,
+      "appliedRevision": "rev-test-1",
+      "contentSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "readiness": "ready"
+    }
+  }
+}

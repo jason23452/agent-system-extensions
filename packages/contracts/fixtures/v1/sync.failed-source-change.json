@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "agent-system.extension-source-sync.v1",
+  "source": {
+    "status": "configured",
+    "desiredUrl": "https://gitlab.example.test/group/new-skills.git"
+  },
+  "operation": {
+    "operationId": "sync-gitlab-project-source-change-001",
+    "sourceUrl": "https://gitlab.example.test/group/new-skills.git",
+    "status": "failed",
+    "completed": true,
+    "retryAction": "resume",
+    "candidateRevision": "candidate-new-source-2",
+    "candidateSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+  },
+  "targets": {
+    "main": {
+      "appliedSourceUrl": "https://gitlab.example.test/group/old-skills.git",
+      "appliedRevision": "old-main-revision-1",
+      "contentSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "readiness": "ready"
+    },
+    "workflow-test": {
+      "appliedSourceUrl": "https://gitlab.example.test/group/old-skills.git",
+      "appliedRevision": "old-test-revision-1",
+      "contentSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "readiness": "ready"
+    }
+  },
+  "changes": {
+    "candidateRevision": "candidate-new-source-2",
+    "added": [{ "kind": "skills", "name": "candidate-skill" }],
+    "modified": [],
+    "deleted": []
+  }
+}

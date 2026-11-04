@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "agent-system.extension-catalog.v1",
+  "contractVersion": "1.0.0",
+  "extensions": [
+    {
+      "extensionId": "open-design",
+      "latestVersion": "2.0.0",
+      "releases": [
+        {
+          "schemaVersion": "agent-system.extension-release.v1",
+          "contractVersion": "1.0.0",
+          "extensionId": "open-design",
+          "version": "2.0.0",
+          "artifact": {
+            "url": "https://github.com/jason23452/agent-system-extensions/releases/download/open-design-v2.0.0/open-design.aicxt",
+            "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sizeBytes": 450
+          },
+          "hostRequirements": { "minHostVersion": "2.0.0" }
+        },
+        {
+          "schemaVersion": "agent-system.extension-release.v1",
+          "contractVersion": "1.0.0",
+          "extensionId": "open-design",
+          "version": "2.0.0",
+          "artifact": {
+            "url": "https://github.com/jason23452/agent-system-extensions/releases/download/open-design-v2.0.0-rebuilt/open-design.aicxt",
+            "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "sizeBytes": 451
+          },
+          "hostRequirements": { "minHostVersion": "2.0.0" }
+        }
+      ]
+    }
+  ]
+}

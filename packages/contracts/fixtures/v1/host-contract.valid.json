@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "agent-system.extension-host.v1",
+  "settings": {
+    "schemaVersion": "agent-system.extension-settings.v1",
+    "properties": {
+      "cloneUrl": {
+        "type": "string",
+        "required": false,
+        "sensitive": false,
+        "description": "Project-owned GitLab source URL."
+      },
+      "accessToken": {
+        "type": "string",
+        "required": false,
+        "sensitive": true,
+        "description": "Optional source credential managed by the host."
+      }
+    }
+  },
+  "context": {
+    "schemaVersion": "agent-system.extension-context.v1",
+    "properties": {
+      "projectId": { "type": "string", "description": "Trusted host Project identity." }
+    }
+  },
+  "migrations": [
+    { "id": "settings-v1-to-v2", "fromVersion": "1.0.0", "toVersion": "2.0.0" }
+  ]
+}

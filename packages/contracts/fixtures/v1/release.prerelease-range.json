@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "agent-system.extension-release.v1",
+  "contractVersion": "1.0.0",
+  "extensionId": "open-design",
+  "version": "1.0.0-rc.1",
+  "artifact": {
+    "url": "https://github.com/jason23452/agent-system-extensions/releases/download/open-design-v1.0.0-rc.1/open-design.aicxt",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "sizeBytes": 450
+  },
+  "hostRequirements": {
+    "minHostVersion": "1.0.0-rc.2",
+    "maxHostVersionExclusive": "1.0.0-rc.20",
+    "capabilities": ["extension.host.readSettings.v1"]
+  },
+  "metadata": {
+    "aliases": ["opendesign"],
+    "icon": "mindmap",
+    "fileAssociations": [{ "extension": ".xmind", "mediaType": "application/x-xmind" }]
+  }
+}

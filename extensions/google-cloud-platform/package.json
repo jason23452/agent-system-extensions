@@ -1,0 +1,7 @@
+{
+  "name": "@agent-system/extension-google-cloud-platform",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Google Cloud Platform Agent System Extension 工作區；產品內容由其負責票券交付。"
+}
