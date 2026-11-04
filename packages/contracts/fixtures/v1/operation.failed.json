@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "agent-system.extension-lifecycle-status.v1",
+  "operationId": "install-open-design-001",
+  "identity": {
+    "extensionId": "open-design",
+    "version": "2.0.0",
+    "packageSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "scope": "project",
+    "project": "design-workspace"
+  },
+  "phase": "lifecycle",
+  "status": "failed",
+  "completed": false,
+  "retryAction": "resume"
+}

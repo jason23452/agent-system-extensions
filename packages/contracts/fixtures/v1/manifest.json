@@ -1,0 +1,27 @@
+{
+  "contractVersion": "1.0.0",
+  "cases": [
+    { "contract": "metadata", "expected": "valid", "file": "package-metadata.valid.json" },
+    { "contract": "metadata", "expected": "invalid", "file": "package-metadata.invalid.json", "errorCode": "EXTENSION_METADATA_INVALID" },
+    { "contract": "host-contract", "expected": "valid", "file": "host-contract.valid.json" },
+    { "contract": "host-contract", "expected": "invalid", "file": "host-contract.unsupported.json", "errorCode": "EXTENSION_HOST_CONTRACT_UNSUPPORTED" },
+    { "contract": "contributions", "expected": "valid", "file": "contributions.valid.json" },
+    { "contract": "release", "expected": "valid", "file": "release.valid.json", "hostVersion": "2.2.5", "hostCapabilities": ["extension.host.readSettings.v1"] },
+    { "contract": "release", "expected": "valid", "file": "release.prerelease-range.json", "hostVersion": "1.0.0-rc.10", "hostCapabilities": ["extension.host.readSettings.v1"] },
+    { "contract": "release", "expected": "incompatible", "file": "release.prerelease-range.json", "hostVersion": "1.0.0-rc.1", "hostCapabilities": ["extension.host.readSettings.v1"] },
+    { "contract": "release", "expected": "incompatible", "file": "release.prerelease-range.json", "hostVersion": "1.0.0-rc.20", "hostCapabilities": ["extension.host.readSettings.v1"], "incompatibleReason": "host-version-too-new" },
+    { "contract": "release", "expected": "incompatible", "file": "release.incompatible-host.json", "hostVersion": "2.2.5", "hostCapabilities": ["extension.host.readSettings.v1"] },
+    { "contract": "release", "expected": "invalid", "file": "release.unsupported-contract.json", "errorCode": "EXTENSION_CONTRACT_UNSUPPORTED" },
+    { "contract": "catalog", "expected": "valid", "file": "catalog.valid.json" },
+    { "contract": "catalog", "expected": "invalid", "file": "catalog.version-hash-conflict.json", "errorCode": "EXTENSION_CATALOG_VERSION_CONFLICT" },
+    { "contract": "lifecycle", "expected": "valid", "file": "operation.succeeded.json" },
+    { "contract": "lifecycle", "expected": "valid", "file": "operation.failed.json" },
+    { "contract": "lifecycle", "expected": "valid", "file": "operation.unknown.json" },
+    { "contract": "retry", "expected": "valid", "file": "retry.query-status.json" },
+    { "contract": "retry", "expected": "valid", "file": "retry.resume.json" },
+    { "contract": "host-context", "expected": "valid", "file": "host-context.project.json" },
+    { "contract": "host-context", "expected": "invalid", "file": "host-context.with-secret.invalid.json", "errorCode": "EXTENSION_HOST_CONTEXT_INVALID" },
+    { "contract": "source-sync", "expected": "valid", "file": "sync.not-configured.json" },
+    { "contract": "source-sync", "expected": "valid", "file": "sync.partial.json" }
+  ]
+}

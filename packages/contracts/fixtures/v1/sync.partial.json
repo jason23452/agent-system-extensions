@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "agent-system.extension-source-sync.v1",
+  "source": { "status": "configured", "desiredUrl": "https://gitlab.example.test/group/skills.git" },
+  "operation": {
+    "operationId": "sync-gitlab-project-001",
+    "sourceUrl": "https://gitlab.example.test/group/skills.git",
+    "status": "unknown",
+    "completed": false,
+    "retryAction": "query-first",
+    "candidateRevision": "rev-candidate-2",
+    "candidateSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+  },
+  "targets": {
+    "main": {
+      "appliedRevision": "rev-candidate-2",
+      "contentSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "readiness": "ready"
+    },
+    "workflow-test": { "readiness": "unknown" }
+  },
+  "changes": {
+    "candidateRevision": "rev-candidate-2",
+    "added": [{ "kind": "skills", "name": "new-skill" }],
+    "modified": [{ "kind": "skills", "name": "updated-skill" }],
+    "deleted": [{ "kind": "skills", "name": "removed-skill" }]
+  }
+}

@@ -1,0 +1,9 @@
+[
+  {
+    "kind": "skills",
+    "name": "gitlab-skill-catalog",
+    "aliases": ["gitlab-skills"],
+    "icon": "puzzle",
+    "fileAssociations": [{ "extension": ".md", "mediaType": "text/markdown" }]
+  }
+]

@@ -1,0 +1,10 @@
+{
+  "aliases": ["opendesign", "opendesign"],
+  "icon": "mindmap",
+  "fileAssociations": [
+    {
+      "extension": ".xmind",
+      "mediaType": "application/x-xmind"
+    }
+  ]
+}

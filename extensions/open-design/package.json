@@ -1,0 +1,7 @@
+{
+  "name": "@agent-system/extension-open-design",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Open Design Agent System Extension workspace; product contents are delivered by its owning ticket."
+}

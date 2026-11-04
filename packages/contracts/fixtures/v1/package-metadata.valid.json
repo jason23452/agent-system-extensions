@@ -1,0 +1,15 @@
+{
+  "aliases": ["opendesign"],
+  "icon": "mindmap",
+  "fileAssociations": [
+    {
+      "extension": ".xmind",
+      "mediaType": "application/x-xmind"
+    }
+  ],
+  "installMode": "workflow-command-extend",
+  "packageFormat": ".aicxt",
+  "workflowId": "workflow-xmind",
+  "capabilities": ["xmind.read", "xmind.to-markdown"],
+  "extendResources": true
+}
