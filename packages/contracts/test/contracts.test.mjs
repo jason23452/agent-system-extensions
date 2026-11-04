@@ -90,3 +90,16 @@ test("clearing a source setting preserves previously applied target revisions", 
   assert.equal(state.targets.main.appliedRevision, "rev-main-1");
   assert.equal(state.targets["workflow-test"].appliedRevision, "rev-test-1");
 });
+
+test("a failed source change retains each target's previous applied source", async () => {
+  const state = validateExtensionSourceSyncState(JSON.parse(await readFile(new URL("sync.failed-source-change.json", fixtures), "utf8")));
+  const desiredUrl = "https://gitlab.example.test/group/new-skills.git";
+  const appliedUrl = "https://gitlab.example.test/group/old-skills.git";
+
+  assert.equal(state.source.desiredUrl, desiredUrl);
+  assert.equal(state.operation.sourceUrl, desiredUrl);
+  assert.equal(state.operation.status, "failed");
+  assert.equal(state.targets.main.appliedSourceUrl, appliedUrl);
+  assert.equal(state.targets["workflow-test"].appliedSourceUrl, appliedUrl);
+  assert.notEqual(state.targets.main.appliedSourceUrl, state.source.desiredUrl);
+});

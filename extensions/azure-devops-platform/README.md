@@ -1,3 +1,3 @@
-# Azure DevOps Extension workspace
+# Azure DevOps Extension 工作區
 
-Independent Extension version: `2.0.0` baseline. Product source and package assets are added by the owning migration ticket.
+Extension 獨立版本基線：`2.0.0`。產品原始碼與套件資產由負責遷移的票券新增。

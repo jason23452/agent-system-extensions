@@ -28,12 +28,15 @@ export class ExtensionContractValidationError extends Error {
   }
 }
 
-export function validateExtensionPackageMetadata(value: unknown): ExtensionPackageMetadata {
+export function validateExtensionPackageMetadata(value: unknown, canonicalExtensionId?: string): ExtensionPackageMetadata {
   const metadata = asRecord(value, "EXTENSION_METADATA_INVALID");
   const serialized = JSON.stringify(metadata);
   if (new TextEncoder().encode(serialized).byteLength > 64 * 1024) fail("EXTENSION_METADATA_TOO_LARGE");
 
   if (metadata.aliases !== undefined) validateAliases(metadata.aliases, "EXTENSION_METADATA_INVALID");
+  if (canonicalExtensionId && Array.isArray(metadata.aliases) && metadata.aliases.includes(canonicalExtensionId)) {
+    fail("EXTENSION_METADATA_INVALID");
+  }
   if (metadata.icon !== undefined && (typeof metadata.icon !== "string" || !/^[a-z0-9][a-z0-9._-]{0,63}$/.test(metadata.icon))) {
     fail("EXTENSION_METADATA_INVALID");
   }
@@ -123,7 +126,7 @@ export function validateExtensionRelease(value: unknown): ExtensionRelease {
     fail("EXTENSION_RELEASE_ARTIFACT_INVALID");
   }
   validateExtensionHostRequirements(release.hostRequirements);
-  if (release.metadata !== undefined) validateExtensionPackageMetadata(release.metadata);
+  if (release.metadata !== undefined) validateExtensionPackageMetadata(release.metadata, release.extensionId);
   return cloneJson(release) as unknown as ExtensionRelease;
 }
 
@@ -267,8 +270,12 @@ function validateOperationIdentity(value: unknown): ExtensionOperationIdentity {
 
 function validateSyncTarget(value: unknown): void {
   const target = asRecord(value, "EXTENSION_SOURCE_SYNC_TARGET_INVALID");
-  assertOnlyKeys(target, ["appliedRevision", "contentSha256", "readiness"], "EXTENSION_SOURCE_SYNC_TARGET_INVALID");
+  assertOnlyKeys(target, ["appliedRevision", "appliedSourceUrl", "contentSha256", "readiness"], "EXTENSION_SOURCE_SYNC_TARGET_INVALID");
   if (!["not-ready", "ready", "unknown"].includes(String(target.readiness))) fail("EXTENSION_SOURCE_SYNC_TARGET_INVALID");
+  if (target.appliedSourceUrl !== undefined
+    && (typeof target.appliedSourceUrl !== "string" || !isHttpUrl(target.appliedSourceUrl) || target.appliedRevision === undefined)) {
+    fail("EXTENSION_SOURCE_SYNC_TARGET_INVALID");
+  }
   if (target.appliedRevision !== undefined && (typeof target.appliedRevision !== "string" || !target.appliedRevision.trim())) fail("EXTENSION_SOURCE_SYNC_TARGET_INVALID");
   if (target.contentSha256 !== undefined && (typeof target.contentSha256 !== "string" || !SHA256_PATTERN.test(target.contentSha256))) fail("EXTENSION_SOURCE_SYNC_TARGET_INVALID");
   if ((target.appliedRevision === undefined) !== (target.contentSha256 === undefined)) fail("EXTENSION_SOURCE_SYNC_TARGET_INVALID");

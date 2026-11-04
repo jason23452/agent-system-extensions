@@ -107,6 +107,7 @@ export type ExtensionHostContext = ExtensionOperationIdentity & {
 };
 
 export type ExtensionSourceSyncTarget = {
+  appliedSourceUrl?: string;
   appliedRevision?: string;
   contentSha256?: string;
   readiness: "not-ready" | "ready" | "unknown";
@@ -136,7 +137,7 @@ export type ExtensionSourceSyncState = {
   };
 };
 
-/** The host binds this zero-argument API to the installed Extension scope and Project. */
+/** 宿主會將此零參數 API 綁定至已安裝擴充套件的 scope 與 Project。 */
 export type ExtensionHostApi = {
   readSettings(): Promise<Record<string, unknown>>;
 };

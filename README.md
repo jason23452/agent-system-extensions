@@ -1,12 +1,12 @@
 # Agent System Extensions
 
-This repository is the public source workspace for Agent System Extensions and their shared CLI. The initial workspace and release/host contracts are established by ticket 01; product extension contents and CLI behavior are added by their owning tickets.
+此 repo 是 Agent System Extensions 及共用 CLI 的公開原始碼工作區。Ticket 01 建立初始工作區與發布／宿主契約；各產品擴充套件內容及 CLI 功能由其負責票券交付。
 
-## Workspace baseline
+## 工作區基線
 
-- Node.js 24 LTS; npm workspaces are the repository package boundary.
-- The CLI and each Extension have independent package versions. Each of the five Extension workspaces starts at the agreed 2.0.0 content baseline; the CLI starts at its own unpublished 0.1.0 workspace version.
-- Extension releases are immutable `.aicxt` artifacts. Catalog and release identity includes extension ID, version, and SHA-256; the catalog's per-Extension latest pointer is explicit.
-- `packages/contracts` owns the versioned release, catalog, package metadata, host, lifecycle, and source-sync wire contracts plus their shared conformance fixtures.
+- 使用 Node.js 24 LTS；npm workspaces 是 repo 的套件邊界。
+- CLI 與每個 Extension 各自維護套件版本。五個 Extension workspace 皆以已決議的 2.0.0 內容為版本基線；CLI 使用獨立且尚未發布的 0.1.0 workspace 版本。
+- Extension release 是不可變的 `.aicxt` artifact。Catalog 與 release 身分包含 extension ID、version 及 SHA-256；catalog 明確指定每個 Extension 的 latest 版本。
+- `packages/contracts` 是版本化 release、catalog、package metadata、host、lifecycle、source-sync wire contract 與共用 conformance fixtures 的唯一維護位置。
 
-The initial workspace deliberately contains no product Extension source or functional CLI. Those contents are owned by the subsequent delivery tickets.
+初始工作區刻意不包含產品 Extension 原始碼或可執行 CLI；這些內容由後續交付票券負責。
