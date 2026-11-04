@@ -107,7 +107,7 @@ export type ExtensionHostContext = ExtensionOperationIdentity & {
 };
 
 export type ExtensionSourceSyncTarget = {
-  appliedSourceUrl?: string;
+  appliedSourceUrl: string | null;
   appliedRevision?: string;
   contentSha256?: string;
   readiness: "not-ready" | "ready" | "unknown";

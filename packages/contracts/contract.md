@@ -19,7 +19,7 @@
 ## Lifecycle status、source sync
 
 - Lifecycle status 固定 `operationId` 及完整安裝身分，可表示 running／succeeded／failed／unknown、是否 completed 及 retry action。Retry request 只能針對相同 operation ID 與 identity 執行 `query-status` 或 `resume`；`unknown` 必須先 query-first。成功的 completed 作業重試不新增副作用，且相同操作的 status 保持相同 operation ID。
-- Source sync 分別保存設定的 `desiredUrl`、操作的 `sourceUrl`，及 Main／workflow-test target 的實際 `appliedSourceUrl`、revision、content hash 與 readiness。換來源同步失敗時，desired 與 operation 可指向新 URL，但每個 target 保留舊 applied URL／revision／hash，不能標成新來源已生效。`appliedSourceUrl` 為可選欄位，以相容尚未記錄來源的舊狀態。清除 URL 以 `not-configured`／`null` 表示，不抹除既有 applied 身分。Operation 保存 candidate identity、completed 與 retry action；`unknown` 同樣必須 query-first。
+- Source sync 分別保存設定的 `desiredUrl`、操作的 `sourceUrl`，及 Main／workflow-test target 的實際 `appliedSourceUrl`、revision、content hash 與 readiness。換來源同步失敗時，desired 與 operation 可指向新 URL，但每個 target 保留舊 applied URL／revision／hash，不能標成新來源已生效。`appliedSourceUrl` 為必填欄位：URL 表示已知實際生效來源，`null` 表示未知（包含舊狀態未記錄來源）；消費端遇 `null` 必須顯示未知，絕不從 desired 或 operation URL 推論。清除 URL 以 `not-configured`／`null` 表示，且不抹除先前已知的 applied URL。Operation 保存 candidate identity、completed 與 retry action；`unknown` 同樣必須 query-first。
 - Candidate resource change set 區分 added／modified／deleted；它是待套用候選，不代表兩個 target 均已生效。
 
 ## Conformance fixtures

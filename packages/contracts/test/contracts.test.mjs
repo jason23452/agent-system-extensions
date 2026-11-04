@@ -87,6 +87,8 @@ test("lifecycle outcomes remain attached to one pinned operation identity", asyn
 test("clearing a source setting preserves previously applied target revisions", async () => {
   const state = validateExtensionSourceSyncState(JSON.parse(await readFile(new URL("sync.not-configured.json", fixtures), "utf8")));
   assert.equal(state.source.desiredUrl, null);
+  assert.equal(state.targets.main.appliedSourceUrl, null);
+  assert.equal(state.targets["workflow-test"].appliedSourceUrl, null);
   assert.equal(state.targets.main.appliedRevision, "rev-main-1");
   assert.equal(state.targets["workflow-test"].appliedRevision, "rev-test-1");
 });

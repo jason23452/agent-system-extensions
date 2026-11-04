@@ -12,11 +12,12 @@
   },
   "targets": {
     "main": {
+      "appliedSourceUrl": "https://gitlab.example.test/group/skills.git",
       "appliedRevision": "rev-candidate-2",
       "contentSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
       "readiness": "ready"
     },
-    "workflow-test": { "readiness": "unknown" }
+    "workflow-test": { "appliedSourceUrl": null, "readiness": "unknown" }
   },
   "changes": {
     "candidateRevision": "rev-candidate-2",

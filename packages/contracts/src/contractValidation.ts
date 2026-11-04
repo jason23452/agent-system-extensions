@@ -271,8 +271,9 @@ function validateOperationIdentity(value: unknown): ExtensionOperationIdentity {
 function validateSyncTarget(value: unknown): void {
   const target = asRecord(value, "EXTENSION_SOURCE_SYNC_TARGET_INVALID");
   assertOnlyKeys(target, ["appliedRevision", "appliedSourceUrl", "contentSha256", "readiness"], "EXTENSION_SOURCE_SYNC_TARGET_INVALID");
+  if (!Object.prototype.hasOwnProperty.call(target, "appliedSourceUrl")) fail("EXTENSION_SOURCE_SYNC_TARGET_INVALID");
   if (!["not-ready", "ready", "unknown"].includes(String(target.readiness))) fail("EXTENSION_SOURCE_SYNC_TARGET_INVALID");
-  if (target.appliedSourceUrl !== undefined
+  if (target.appliedSourceUrl !== null
     && (typeof target.appliedSourceUrl !== "string" || !isHttpUrl(target.appliedSourceUrl) || target.appliedRevision === undefined)) {
     fail("EXTENSION_SOURCE_SYNC_TARGET_INVALID");
   }

@@ -25,6 +25,8 @@
     { "contract": "host-context", "expected": "invalid", "file": "host-context.with-secret.invalid.json", "errorCode": "EXTENSION_HOST_CONTEXT_INVALID" },
     { "contract": "source-sync", "expected": "valid", "file": "sync.not-configured.json" },
     { "contract": "source-sync", "expected": "valid", "file": "sync.partial.json" },
-    { "contract": "source-sync", "expected": "valid", "file": "sync.failed-source-change.json" }
+    { "contract": "source-sync", "expected": "valid", "file": "sync.failed-source-change.json" },
+    { "contract": "source-sync", "expected": "invalid", "file": "sync.target-source-missing.invalid.json", "errorCode": "EXTENSION_SOURCE_SYNC_TARGET_INVALID" },
+    { "contract": "source-sync", "expected": "invalid", "file": "sync.target-source-invalid-url.invalid.json", "errorCode": "EXTENSION_SOURCE_SYNC_TARGET_INVALID" }
   ]
 }
