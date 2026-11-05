@@ -5,7 +5,7 @@
 ## 工作區與版本
 
 - 使用 Node.js 24 LTS；npm workspaces 是 repo 套件邊界。
-- 共用 CLI 與每個 Extension 各自維護版本；CLI 目前版本 `0.1.0`，GitLab Extension 首版 `2.0.0`。兩者的版本互不推導。
+- 共用 CLI 與每個 Extension 各自維護版本；CLI 目前版本 `0.1.1`，GitLab Extension 首版 `2.0.0`。兩者的版本互不推導。
 - Extension `.aicxt` 由 catalog 以 extension ID、版本、SHA-256、size 與每套 `latestVersion` 定位。CLI `.tgz` 與 Extension `.aicxt` 分開建立及發布。
 - `packages/contracts` 是 release/catalog、package metadata、host、lifecycle 與 source-sync wire contract 的唯一維護位置。
 - `extensions/gitlab/` 擁有完整 GitLab source-sync 及專屬 builder；共用 CLI 只呼叫其 build script，不複製 GitLab source 或 builder。
@@ -25,7 +25,7 @@ npm run build
 
 - `extensions/gitlab/dist/gitlab-2.0.0.aicxt`
 - `packages/cli/dist/`
-- `packages/cli/dist/release/agent-system-extensions-cli-0.1.0.tgz`（執行 release prepare 時產生）
+- `packages/cli/dist/release/agent-system-extensions-cli-0.1.1.tgz`（執行 CLI release prepare 時產生）
 
 `dist/` 為忽略的建置輸出。GitLab ZIP 含建置時間戳，release 時必須保留 prepare 所產生的 artifact，不能重建後以另一個 hash 覆寫同版本。
 

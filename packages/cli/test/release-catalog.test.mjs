@@ -200,6 +200,44 @@ test("CLI release preparation reuses a pinned tarball and rejects conflicting so
   }
 });
 
+test("preparing a new CLI patch release preserves previous fixed artifact bytes and provenance", async () => {
+  const root = await mkdtemp(join(tmpdir(), "extension-cli-release-versioned-"));
+  try {
+    const oldSourcePath = join(root, "old-source.tgz");
+    const newSourcePath = join(root, "new-source.tgz");
+    const oldFixedPath = join(root, "packages", "cli", "dist", "release", "agent-system-extensions-cli-0.1.0.tgz");
+    const newFixedPath = join(root, "packages", "cli", "dist", "release", "agent-system-extensions-cli-0.1.1.tgz");
+    const oldBytes = Buffer.from("previous immutable CLI release bytes");
+    const newBytes = Buffer.from("new CLI patch release bytes");
+    await writeFile(oldSourcePath, oldBytes);
+    await writeFile(newSourcePath, newBytes);
+
+    const previous = await prepareCliRelease({
+      repositoryRoot: root,
+      version: "0.1.0",
+      artifactPath: oldSourcePath,
+      finalArtifactPath: oldFixedPath,
+      sourceRevision,
+    });
+    const oldProvenanceBytes = await readFile(previous.provenancePath);
+    const next = await prepareCliRelease({
+      repositoryRoot: root,
+      version: "0.1.1",
+      artifactPath: newSourcePath,
+      finalArtifactPath: newFixedPath,
+      sourceRevision: "b".repeat(40),
+    });
+
+    assert.deepEqual(await readFile(oldFixedPath), oldBytes);
+    assert.deepEqual(await readFile(previous.provenancePath), oldProvenanceBytes);
+    assert.deepEqual(await readFile(newFixedPath), newBytes);
+    assert.equal(next.provenance.version, "0.1.1");
+    assert.equal(next.provenance.sourceRevision, "b".repeat(40));
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test("catalog latest advances per Extension and cannot move backwards", async () => {
   const root = await mkdtemp(join(tmpdir(), "extension-cli-release-latest-"));
   try {

@@ -72,7 +72,21 @@ npm run typecheck --workspace=@agent-system/extensions-cli
 正式 CLI `.tgz` 範例（**僅在該版本已經過獨立 review 並正式發布後使用**）：
 
 ```sh
-npx --yes --package=https://github.com/jason23452/agent-system-extensions/releases/download/cli-v0.1.0/agent-system-extensions-cli-0.1.0.tgz agent-system-extensions --help
+npx --yes --package=https://github.com/jason23452/agent-system-extensions/releases/download/cli-v0.1.1/agent-system-extensions-cli-0.1.1.tgz agent-system-extensions --help
 ```
 
 正式發布與 immutable tag 規則見 repo 根目錄 README；不得以本機 build 產物冒稱 GitHub 匿名下載驗收。
+
+### 驗證已準備的 CLI release artifact
+
+`npm test` 會從目前 source 重新 pack；發布檢查必須另外指定 `prepare-cli` 產生的精確 tarball，避免 source smoke 被誤認為固定 release artifact 驗收。`prepare-cli` 輸出的 `sourceRevision` 一併傳入，測試會核對該版本 provenance、artifact SHA-256／size，並對安裝後的精確 bytes 執行乾淨 npm cache、local install、直接 Node 啟動與 symlink 啟動：
+
+```powershell
+$env:AGENT_SYSTEM_CLI_TARBALL = "packages/cli/dist/release/agent-system-extensions-cli-0.1.1.tgz"
+$env:AGENT_SYSTEM_CLI_SOURCE_REVISION = "<prepare-cli 輸出的 sourceRevision>"
+node --test --test-timeout=60000 packages/cli/test/packed-package.test.mjs
+Remove-Item Env:AGENT_SYSTEM_CLI_TARBALL
+Remove-Item Env:AGENT_SYSTEM_CLI_SOURCE_REVISION
+```
+
+此驗證不執行 `npm pack`，直接安裝指定 artifact；版本／provenance 衝突或 hash 不符會失敗。
