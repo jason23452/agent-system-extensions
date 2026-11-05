@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -22,7 +22,7 @@ test("npm tarball is self-contained and launches from a clean npm cache and loca
 
     const npxResult = runNpm(["exec", "--offline", "--yes", "--package", tarball, "--", "agent-system-extensions", "--help"], root, npmCache);
     assert.equal(npxResult.status, 0, npxResult.stderr);
-    assert.match(npxResult.stdout, /Agent System Extensions CLI/);
+    assert.match(npxResult.stdout, /Agent System Extensions CLI/, `npm exec did not print CLI help (stderr: ${npxResult.stderr})`);
 
     const installRoot = join(root, "installed-cli");
     const installResult = runNpm(["install", "--offline", "--ignore-scripts", "--no-audit", "--no-fund", "--prefix", installRoot, tarball], root, npmCache);
@@ -34,6 +34,20 @@ test("npm tarball is self-contained and launches from a clean npm cache and loca
     const localResult = spawnSync(process.execPath, [installedCli, "--help"], { encoding: "utf8", timeout: 5_000, windowsHide: true });
     assert.equal(localResult.status, 0, localResult.stderr);
     assert.match(localResult.stdout, /install/);
+
+    const symlinkedCli = join(root, "agent-system-extensions-link.mjs");
+    await symlink(installedCli, symlinkedCli, "file");
+    const symlinkResult = spawnSync(process.execPath, [symlinkedCli, "--help"], {
+      encoding: "utf8",
+      timeout: 5_000,
+      windowsHide: true,
+    });
+    assert.equal(symlinkResult.status, 0, symlinkResult.stderr);
+    assert.match(
+      symlinkResult.stdout,
+      /Agent System Extensions CLI/,
+      `a symlinked package executable must start the CLI entry point (stderr: ${symlinkResult.stderr})`,
+    );
   } finally {
     await rm(root, { recursive: true, force: true });
   }

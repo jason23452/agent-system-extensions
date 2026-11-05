@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { pathToFileURL } from "node:url";
-import { resolve } from "node:path";
+import { realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { resolveCacheRoot } from "./lib/cache.mjs";
 import { packExtensionDirectory, packageSummary, readAndValidateArchive } from "./lib/archive.mjs";
 import { installExtension, readInstallStatus, retryInstall } from "./lib/platform.mjs";
@@ -183,11 +183,19 @@ function isOperationComplete(result) {
   return operation.status === "succeeded" && operation.completed === true && operation.retryAction === "none";
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+if (process.argv[1] && isEntrypoint(process.argv[1], fileURLToPath(import.meta.url))) {
   runCli().then((exitCode) => {
     process.exitCode = exitCode;
   }).catch((error) => {
     process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
     process.exitCode = 1;
   });
+}
+
+function isEntrypoint(entryPath, modulePath) {
+  try {
+    return realpathSync(entryPath) === realpathSync(modulePath);
+  } catch {
+    return false;
+  }
 }
