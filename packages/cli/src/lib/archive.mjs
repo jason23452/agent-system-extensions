@@ -6,8 +6,8 @@ import { packageError } from "./errors.mjs";
 
 export const MAX_EXTENSION_ARCHIVE_BYTES = 25 * 1024 * 1024;
 const MAX_ENTRY_BYTES = 50 * 1024 * 1024;
-const MAX_TOTAL_UNCOMPRESSED_BYTES = 100 * 1024 * 1024;
-const MAX_ARCHIVE_ENTRIES = 20_000;
+const MAX_TOTAL_UNCOMPRESSED_BYTES = 50 * 1024 * 1024;
+const MAX_ARCHIVE_ENTRIES = 500;
 const EXTENSION_ID = /^[a-z0-9][a-z0-9_.-]{0,63}$/;
 const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 const CRC_TABLE = makeCrcTable();
@@ -101,8 +101,13 @@ export function readZipEntries(archive) {
   if (disk !== 0 || directoryDisk !== 0 || diskEntryCount !== entryCount
     || entryCount === 0xffff || directorySize === 0xffffffff || directoryOffset === 0xffffffff
     || endOffset + 22 + commentLength !== archive.byteLength
-    || directoryOffset + directorySize > endOffset || entryCount > MAX_ARCHIVE_ENTRIES) {
+    || directoryOffset + directorySize > endOffset) {
     throw packageError("ZIP central directory is invalid or unsupported.", "PACKAGE_ARCHIVE_INVALID");
+  }
+  if (entryCount > MAX_ARCHIVE_ENTRIES) {
+    throw packageError("Extension ZIP archive exceeds the 500-entry limit.", "PACKAGE_ARCHIVE_TOO_MANY_ENTRIES", {
+      maxEntries: MAX_ARCHIVE_ENTRIES,
+    });
   }
 
   const files = new Map();
@@ -158,7 +163,9 @@ export function readZipEntries(archive) {
     }
     totalUncompressedBytes += content.byteLength;
     if (totalUncompressedBytes > MAX_TOTAL_UNCOMPRESSED_BYTES) {
-      throw packageError("Uncompressed Extension package exceeds the 100 MiB safety limit.", "PACKAGE_ARCHIVE_INVALID");
+      throw packageError("Uncompressed Extension package exceeds the 50 MiB safety limit.", "PACKAGE_ARCHIVE_UNCOMPRESSED_TOO_LARGE", {
+        maxBytes: MAX_TOTAL_UNCOMPRESSED_BYTES,
+      });
     }
     if (!directoryEntry) files.set(safeName, content);
     cursor += recordLength;

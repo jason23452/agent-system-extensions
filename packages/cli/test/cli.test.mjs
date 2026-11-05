@@ -83,6 +83,57 @@ test("validate accepts the base64 SHA-256 integrity encoding supported by the pl
   }
 });
 
+test("validate matches the host 500-entry boundary", async () => {
+  const root = await mkdtemp(join(tmpdir(), "extension-cli-entry-limit-"));
+  try {
+    const acceptedPath = join(root, "500-entries.aicxt");
+    const rejectedPath = join(root, "501-entries.aicxt");
+    const files = (count) => Array.from({ length: count }, (_, index) => [`extra/${index}.txt`, Buffer.alloc(0)]);
+    await writeFile(acceptedPath, createAicxt({ extraFiles: files(498) }));
+    await writeFile(rejectedPath, createAicxt({ extraFiles: files(499) }));
+
+    const accepted = runCli("validate", acceptedPath, "--json");
+    const rejected = runCli("validate", rejectedPath, "--json");
+    assert.equal(accepted.status, 0, accepted.stderr);
+    assert.equal(rejected.status, 6);
+    assert.equal(JSON.parse(rejected.stderr).error.code, "PACKAGE_ARCHIVE_TOO_MANY_ENTRIES");
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("validate rejects compressed packages whose expanded total exceeds the host 50 MiB limit", async () => {
+  const root = await mkdtemp(join(tmpdir(), "extension-cli-uncompressed-limit-"));
+  try {
+    const exactLimitPath = join(root, "expanded-50-mib.aicxt");
+    const archivePath = join(root, "expanded-over-50-mib.aicxt");
+    const baseArchive = createAicxt();
+    const remainingBytes = 50 * 1024 * 1024 - totalUncompressedBytes(baseArchive);
+    const perFileBytes = Math.floor(remainingBytes / 5);
+    const nearLimitPadding = Array.from({ length: 5 }, (_, index) => [
+      `padding/${index}.bin`, Buffer.alloc(perFileBytes + (index === 4 ? remainingBytes % 5 : 0), 0x5a),
+    ]);
+    const padding = Array.from({ length: 6 }, (_, index) => [
+      `padding/${index}.bin`, Buffer.alloc(9 * 1024 * 1024, 0x5a),
+    ]);
+    const exactLimitArchive = createAicxt({ extraFiles: nearLimitPadding, compressExtraFiles: true });
+    const archive = createAicxt({ extraFiles: padding, compressExtraFiles: true });
+    assert.equal(totalUncompressedBytes(exactLimitArchive), 50 * 1024 * 1024);
+    assert.ok(exactLimitArchive.byteLength < 25 * 1024 * 1024);
+    assert.ok(archive.byteLength < 25 * 1024 * 1024, "the compressed fixture must remain within the host archive limit");
+    await writeFile(exactLimitPath, exactLimitArchive);
+    await writeFile(archivePath, archive);
+
+    const exactLimit = runCli("validate", exactLimitPath, "--json");
+    const result = runCli("validate", archivePath, "--json");
+    assert.equal(exactLimit.status, 0, exactLimit.stderr);
+    assert.equal(result.status, 6);
+    assert.equal(JSON.parse(result.stderr).error.code, "PACKAGE_ARCHIVE_UNCOMPRESSED_TOO_LARGE");
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test("pack builds a package from a directory and validates the produced archive", async () => {
   const root = await mkdtemp(join(tmpdir(), "extension-cli-pack-"));
   try {
@@ -130,4 +181,19 @@ function readAicxtEntries() {
     cursor += 46 + nameLength + extraLength + commentLength;
   }
   return entries;
+}
+
+function totalUncompressedBytes(archive) {
+  const endOffset = archive.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+  const entryCount = archive.readUInt16LE(endOffset + 10);
+  let total = 0;
+  let cursor = archive.readUInt32LE(endOffset + 16);
+  for (let index = 0; index < entryCount; index += 1) {
+    const nameLength = archive.readUInt16LE(cursor + 28);
+    const extraLength = archive.readUInt16LE(cursor + 30);
+    const commentLength = archive.readUInt16LE(cursor + 32);
+    total += archive.readUInt32LE(cursor + 24);
+    cursor += 46 + nameLength + extraLength + commentLength;
+  }
+  return total;
 }

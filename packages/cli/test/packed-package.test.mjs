@@ -17,6 +17,8 @@ test("npm tarball is self-contained and launches from a clean npm cache and loca
     const packRecord = JSON.parse(packed.stdout)[0];
     const tarball = join(root, packRecord.filename);
     assert.match(packRecord.filename, /extensions-cli-0\.1\.0\.tgz$/);
+    assert.equal(packRecord.files.some((file) => file.path.startsWith("dist/release/")), false,
+      "the prepared release tarball must not recursively include itself or adjacent pinned artifacts");
 
     const npxResult = runNpm(["exec", "--offline", "--yes", "--package", tarball, "--", "agent-system-extensions", "--help"], root, npmCache);
     assert.equal(npxResult.status, 0, npxResult.stderr);

@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
-import { createExtensionArchive } from "../build.mjs";
+import { buildExtensionPackage, createExtensionArchive } from "../build.mjs";
 
 test("the GitLab builder emits a self-contained 2.0.0 .aicxt with matching source-sync metadata", async () => {
   const { archive, files, manifest } = await createExtensionArchive();
@@ -25,6 +28,20 @@ test("the GitLab builder emits a self-contained 2.0.0 .aicxt with matching sourc
   assert.equal(entries.has("plugins/gitlab/gitlab.ts"), true);
   assert.equal(entries.has("plugins/gitlab/selector.js"), true);
   assert.equal(source.some(([path, content]) => path === "backend/entry.js" && (content.includes("GITLAB_SKILLS_REPOSITORY") || content.includes("192.168.1.104"))), false);
+});
+
+test("the GitLab builder refuses to replace an existing fixed output", async () => {
+  const root = await mkdtemp(join(tmpdir(), "gitlab-extension-build-"));
+  try {
+    const output = join(root, "gitlab-2.0.0.aicxt");
+    const pinnedBytes = Buffer.from("pinned artifact bytes");
+    await writeFile(output, pinnedBytes);
+
+    await assert.rejects(buildExtensionPackage(output), (error) => error.code === "RELEASE_IMMUTABLE_CONFLICT");
+    assert.deepEqual(await readFile(output), pinnedBytes);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });
 
 function readStoredZipEntries(archive) {

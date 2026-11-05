@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { validateExtensionCatalog } from "../src/lib/contracts.mjs";
-import { prepareExtensionRelease } from "../src/lib/release-catalog.mjs";
+import { prepareCliRelease, prepareExtensionRelease } from "../src/lib/release-catalog.mjs";
 import { createAicxt } from "./fixtures.mjs";
 
 const sourceRevision = "a".repeat(40);
@@ -58,6 +58,143 @@ test("preparing the same fixed artifact is idempotent and a same-version differe
 
     assert.equal(await readFile(first.catalogPath, "utf8"), beforeCatalog);
     assert.equal(await readFile(first.provenancePath, "utf8"), beforeProvenance);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("release preparation reuses pinned bytes and preserves them when source or hash conflicts", async () => {
+  const root = await mkdtemp(join(tmpdir(), "extension-cli-release-staging-"));
+  try {
+    const firstPath = join(root, "staged-first.aicxt");
+    const changedPath = join(root, "staged-changed.aicxt");
+    const fixedPath = join(root, "extensions", "gitlab", "dist", "gitlab-2.0.0.aicxt");
+    const firstBytes = createAicxt({ extensionId: "gitlab", displayName: "GitLab Skills", version: "2.0.0" });
+    const changedBytes = createAicxt({ extensionId: "gitlab", displayName: "GitLab Skills", version: "2.0.0", extraFileBytes: 3 });
+    await writeFile(firstPath, firstBytes);
+    await writeFile(changedPath, changedBytes);
+
+    const first = await prepareExtensionRelease({
+      repositoryRoot: root,
+      extensionId: "gitlab",
+      version: "2.0.0",
+      artifactPath: firstPath,
+      finalArtifactPath: fixedPath,
+      sourceRevision,
+    });
+    const pinnedBytes = await readFile(fixedPath);
+    const pinnedProvenance = await readFile(first.provenancePath, "utf8");
+    const pinnedCatalog = await readFile(first.catalogPath, "utf8");
+
+    const rerun = await prepareExtensionRelease({
+      repositoryRoot: root,
+      extensionId: "gitlab",
+      version: "2.0.0",
+      artifactPath: changedPath,
+      finalArtifactPath: fixedPath,
+      sourceRevision,
+    });
+    assert.equal(rerun.packageData.archiveSha256, first.packageData.archiveSha256);
+    await assert.rejects(prepareExtensionRelease({
+      repositoryRoot: root,
+      extensionId: "gitlab",
+      version: "2.0.0",
+      artifactPath: changedPath,
+      finalArtifactPath: fixedPath,
+      sourceRevision: "b".repeat(40),
+    }), (error) => error.code === "RELEASE_PROVENANCE_CONFLICT");
+
+    assert.deepEqual(await readFile(fixedPath), pinnedBytes);
+    assert.equal(await readFile(first.provenancePath, "utf8"), pinnedProvenance);
+    assert.equal(await readFile(first.catalogPath, "utf8"), pinnedCatalog);
+    assert.equal((await prepareExtensionRelease({
+      repositoryRoot: root,
+      extensionId: "gitlab",
+      version: "2.0.0",
+      artifactPath: changedPath,
+      finalArtifactPath: fixedPath,
+      sourceRevision,
+    })).packageData.archiveSha256, first.packageData.archiveSha256);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("first promotion reuses exact preexisting bytes and rejects a different unpinned artifact", async () => {
+  const root = await mkdtemp(join(tmpdir(), "extension-cli-release-promotion-"));
+  try {
+    const sameRoot = join(root, "same");
+    const conflictRoot = join(root, "conflict");
+    const packageBytes = createAicxt({ extensionId: "gitlab", displayName: "GitLab Skills", version: "2.0.0" });
+    const changedBytes = createAicxt({ extensionId: "gitlab", displayName: "GitLab Skills", version: "2.0.0", extraFileBytes: 3 });
+    const prepare = async (repositoryRoot, artifactBytes) => {
+      const artifactPath = join(repositoryRoot, "candidate.aicxt");
+      const finalArtifactPath = join(repositoryRoot, "extensions", "gitlab", "dist", "gitlab-2.0.0.aicxt");
+      await mkdir(dirname(finalArtifactPath), { recursive: true });
+      await writeFile(artifactPath, artifactBytes);
+      await writeFile(finalArtifactPath, packageBytes);
+      return { artifactPath, finalArtifactPath, repositoryRoot };
+    };
+
+    const reusable = await prepare(sameRoot, packageBytes);
+    await prepareExtensionRelease({
+      ...reusable,
+      extensionId: "gitlab",
+      version: "2.0.0",
+      sourceRevision,
+    });
+    assert.deepEqual(await readFile(reusable.finalArtifactPath), packageBytes);
+
+    const conflict = await prepare(conflictRoot, changedBytes);
+    await assert.rejects(prepareExtensionRelease({
+      ...conflict,
+      extensionId: "gitlab",
+      version: "2.0.0",
+      sourceRevision,
+    }), (error) => error.code === "RELEASE_IMMUTABLE_CONFLICT");
+    assert.deepEqual(await readFile(conflict.finalArtifactPath), packageBytes);
+    await assert.rejects(readFile(join(conflictRoot, "releases", "gitlab", "2.0.0.json")), { code: "ENOENT" });
+    await assert.rejects(readFile(join(conflictRoot, "catalog.json")), { code: "ENOENT" });
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("CLI release preparation reuses a pinned tarball and rejects conflicting source without replacing it", async () => {
+  const root = await mkdtemp(join(tmpdir(), "extension-cli-release-staging-"));
+  try {
+    const firstPath = join(root, "staged-first.tgz");
+    const changedPath = join(root, "staged-changed.tgz");
+    const fixedPath = join(root, "packages", "cli", "dist", "release", "agent-system-extensions-cli-0.1.0.tgz");
+    const firstBytes = Buffer.from("first reviewed CLI tarball bytes");
+    const changedBytes = Buffer.from("different CLI tarball bytes");
+    await writeFile(firstPath, firstBytes);
+    await writeFile(changedPath, changedBytes);
+
+    const first = await prepareCliRelease({
+      repositoryRoot: root,
+      version: "0.1.0",
+      artifactPath: firstPath,
+      finalArtifactPath: fixedPath,
+      sourceRevision,
+    });
+    const rerun = await prepareCliRelease({
+      repositoryRoot: root,
+      version: "0.1.0",
+      artifactPath: changedPath,
+      finalArtifactPath: fixedPath,
+      sourceRevision,
+    });
+    assert.equal(rerun.packageSha256, first.packageSha256);
+    await assert.rejects(prepareCliRelease({
+      repositoryRoot: root,
+      version: "0.1.0",
+      artifactPath: changedPath,
+      finalArtifactPath: fixedPath,
+      sourceRevision: "c".repeat(40),
+    }), (error) => error.code === "RELEASE_PROVENANCE_CONFLICT");
+    assert.deepEqual(await readFile(fixedPath), firstBytes);
+    assert.equal(JSON.parse(await readFile(first.provenancePath, "utf8")).artifact.sha256, first.packageSha256);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

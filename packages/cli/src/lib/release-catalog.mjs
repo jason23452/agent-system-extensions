@@ -1,4 +1,4 @@
-import { readFile, mkdir, rename, rm, writeFile } from "node:fs/promises";
+import { readFile, mkdir, link, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { readAndValidateArchive, sha256 } from "./archive.mjs";
@@ -9,6 +9,71 @@ const CATALOG_SCHEMA = "agent-system.extension-catalog.v1";
 const RELEASE_TAG = "agent-system.extension-release.v1";
 const PROVENANCE_SCHEMA = "agent-system.extension-release-provenance.v1";
 const REPOSITORY = "jason23452/agent-system-extensions";
+
+export async function findPinnedExtensionRelease(options) {
+  const root = resolve(options.repositoryRoot);
+  const { extensionId, version, sourceRevision } = options;
+  const catalogPath = options.catalogPath ?? join(root, "catalog.json");
+  const provenancePath = join(root, "releases", extensionId, `${version}.json`);
+  const catalog = await readCatalog(catalogPath);
+  const catalogRelease = catalog.extensions.find((item) => item.extensionId === extensionId)
+    ?.releases.find((item) => item.version === version);
+  const provenance = await readOptionalJson(provenancePath, "RELEASE_PROVENANCE_INVALID");
+
+  if (!catalogRelease && !provenance) return undefined;
+  if (!catalogRelease || !provenance) {
+    throw packageError("固定 Extension release 缺少 catalog 或 provenance；拒絕重新產生覆寫。", "RELEASE_PIN_INCOMPLETE", {
+      extensionId,
+      version,
+    });
+  }
+  if (provenance.schemaVersion !== PROVENANCE_SCHEMA
+    || provenance.extensionId !== extensionId
+    || provenance.version !== version
+    || provenance.sourceRevision !== sourceRevision
+    || provenance.artifact?.assetName !== `${extensionId}-${version}.aicxt`
+    || provenance.artifact?.sha256 !== catalogRelease.artifact.sha256
+    || provenance.artifact?.sizeBytes !== catalogRelease.artifact.sizeBytes
+    || provenance.artifact?.url !== catalogRelease.artifact.url) {
+    throw packageError("同一 Extension version 已固定不同來源或 release identity；拒絕建置或覆寫。", "RELEASE_PROVENANCE_CONFLICT", {
+      extensionId,
+      version,
+    });
+  }
+
+  const artifactPath = join(root, "extensions", extensionId, "dist", provenance.artifact.assetName);
+  const packageData = await readAndValidateArchive(artifactPath, { extensionId, version });
+  if (packageData.archiveSha256 !== provenance.artifact.sha256 || packageData.sizeBytes !== provenance.artifact.sizeBytes) {
+    throw packageError("固定 Extension artifact bytes 與 provenance 不符；拒絕重新產生覆寫。", "RELEASE_ARTIFACT_IDENTITY_MISMATCH", {
+      extensionId,
+      version,
+    });
+  }
+  return { artifactPath, catalogPath, catalogRelease, packageData, provenance, provenancePath };
+}
+
+export async function findPinnedCliRelease(options) {
+  const root = resolve(options.repositoryRoot);
+  const { version, sourceRevision } = options;
+  const provenancePath = join(root, "releases", "cli", `${version}.json`);
+  const provenance = await readOptionalJson(provenancePath, "RELEASE_PROVENANCE_INVALID");
+  if (!provenance) return undefined;
+  if (provenance.schemaVersion !== "agent-system.cli-release-provenance.v1"
+    || provenance.packageName !== "@agent-system/extensions-cli"
+    || provenance.version !== version
+    || provenance.sourceRevision !== sourceRevision
+    || provenance.artifact?.assetName !== `agent-system-extensions-cli-${version}.tgz`) {
+    throw packageError("同一 CLI version 已固定不同來源或 release identity；拒絕建置或覆寫。", "RELEASE_PROVENANCE_CONFLICT", { version });
+  }
+  const artifactPath = join(root, "packages", "cli", "dist", "release", provenance.artifact.assetName);
+  const artifactBytes = await readFile(artifactPath).catch(() => {
+    throw packageError("CLI 固定 tarball 不存在；拒絕重新產生覆寫 provenance。", "RELEASE_ARTIFACT_MISSING", { version });
+  });
+  if (sha256(artifactBytes) !== provenance.artifact.sha256 || artifactBytes.byteLength !== provenance.artifact.sizeBytes) {
+    throw packageError("固定 CLI tarball bytes 與 provenance 不符；拒絕重新產生覆寫。", "RELEASE_ARTIFACT_IDENTITY_MISMATCH", { version });
+  }
+  return { artifactBytes, artifactPath, provenance, provenancePath };
+}
 
 export async function prepareExtensionRelease(options) {
   const root = resolve(options.repositoryRoot);
@@ -23,6 +88,11 @@ export async function prepareExtensionRelease(options) {
   if (typeof options.sourceRevision !== "string" || !/^[a-f0-9]{40,64}$/.test(options.sourceRevision)) {
     throw packageError("發布來源必須提供完整 Git revision。", "RELEASE_SOURCE_REVISION_INVALID");
   }
+
+  const pinned = options.finalArtifactPath
+    ? await findPinnedExtensionRelease({ ...options, repositoryRoot: root, extensionId, version })
+    : undefined;
+  if (pinned) return { ...pinned, artifactName: `${extensionId}-${version}.aicxt`, release: pinned.catalogRelease, tag: `${extensionId}-v${version}` };
 
   const packageData = await readAndValidateArchive(options.artifactPath, { extensionId, version });
   const artifactName = `${extensionId}-${version}.aicxt`;
@@ -51,6 +121,9 @@ export async function prepareExtensionRelease(options) {
   };
   await assertSameProvenanceIfExists(provenancePath, provenance);
 
+  if (options.finalArtifactPath) {
+    await promoteArtifact(packageData.archive, options.finalArtifactPath, packageData.archiveSha256, "Extension");
+  }
   await atomicWrite(provenancePath, `${JSON.stringify(provenance, null, 2)}\n`);
   await atomicWrite(catalogPath, `${JSON.stringify(nextCatalog, null, 2)}\n`);
   return { artifactName, catalogPath, packageData, provenance, provenancePath, release, tag };
@@ -64,6 +137,16 @@ export async function prepareCliRelease(options) {
   }
   if (typeof options.sourceRevision !== "string" || !/^[a-f0-9]{40,64}$/.test(options.sourceRevision)) {
     throw packageError("CLI 發布來源必須提供完整 Git revision。", "RELEASE_SOURCE_REVISION_INVALID");
+  }
+  const pinned = await findPinnedCliRelease({ ...options, repositoryRoot: root, version });
+  if (pinned) {
+    return {
+      ...pinned,
+      assetName: pinned.provenance.artifact.assetName,
+      packageSha256: pinned.provenance.artifact.sha256,
+      sizeBytes: pinned.provenance.artifact.sizeBytes,
+      tag: `cli-v${version}`,
+    };
   }
   const artifactBytes = await readFile(options.artifactPath).catch(() => {
     throw packageError("CLI npm tarball 不存在。", "RELEASE_ARTIFACT_MISSING");
@@ -80,6 +163,7 @@ export async function prepareCliRelease(options) {
   };
   const provenancePath = join(root, "releases", "cli", `${version}.json`);
   await assertSameProvenanceIfExists(provenancePath, provenance);
+  if (options.finalArtifactPath) await promoteArtifact(artifactBytes, options.finalArtifactPath, provenance.artifact.sha256, "CLI");
   await atomicWrite(provenancePath, `${JSON.stringify(provenance, null, 2)}\n`);
   return { assetName, packageSha256: provenance.artifact.sha256, provenance, provenancePath, sizeBytes: artifactBytes.byteLength, tag };
 }
@@ -138,6 +222,39 @@ async function readCatalog(path) {
       throw packageError("既有 catalog 無效，拒絕覆寫。", "CATALOG_INVALID", { validationCode: error.code });
     }
     throw packageError("既有 catalog 無法解析，拒絕覆寫。", "CATALOG_INVALID");
+  }
+}
+
+async function readOptionalJson(path, code) {
+  try {
+    return JSON.parse(await readFile(path, "utf8"));
+  } catch (error) {
+    if (error?.code === "ENOENT") return undefined;
+    throw packageError("既有 release provenance 無法解析，拒絕重新產生覆寫。", code);
+  }
+}
+
+async function promoteArtifact(bytes, destination, expectedSha256, label) {
+  const target = resolve(destination);
+  await mkdir(dirname(target), { recursive: true });
+  const temporary = `${target}.${randomUUID()}.tmp`;
+  await writeFile(temporary, bytes, { flag: "wx" });
+  try {
+    try {
+      await link(temporary, target);
+    } catch (error) {
+      if (error?.code !== "EEXIST") throw error;
+      const existing = await readFile(target);
+      if (sha256(existing) !== expectedSha256) {
+        throw packageError(`${label} 固定版本 artifact 已存在且 hash 不同；拒絕覆寫。`, "RELEASE_IMMUTABLE_CONFLICT", {
+          artifactPath: target,
+          existingSha256: sha256(existing),
+          requestedSha256: expectedSha256,
+        });
+      }
+    }
+  } finally {
+    await rm(temporary, { force: true });
   }
 }
 

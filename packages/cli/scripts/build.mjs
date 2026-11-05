@@ -1,4 +1,4 @@
-import { cp, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -7,7 +7,6 @@ const sourceRoot = join(packageRoot, "src");
 const outputRoot = join(packageRoot, "dist");
 const contractsRoot = resolve(packageRoot, "../contracts/dist");
 
-await rm(outputRoot, { recursive: true, force: true });
 await mkdir(outputRoot, { recursive: true });
 await copyJavaScriptFiles(sourceRoot, outputRoot);
 await cp(contractsRoot, join(outputRoot, "vendor", "contracts"), { recursive: true });

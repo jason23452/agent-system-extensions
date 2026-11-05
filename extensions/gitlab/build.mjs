@@ -37,11 +37,22 @@ export async function createExtensionArchive() {
   };
 }
 
-export async function buildExtensionPackage(output = join(root, "dist", "gitlab-2.0.0.aicxt")) {
+export async function buildExtensionPackage(output) {
   const { archive, manifest } = await createExtensionArchive();
-  const target = resolve(output);
+  const isDefaultBuildOutput = output === undefined;
+  const target = resolve(output ?? join(root, "dist", "build", "gitlab-2.0.0.aicxt"));
   await mkdir(dirname(target), { recursive: true });
-  await writeFile(target, archive);
+  if (isDefaultBuildOutput) {
+    await writeFile(target, archive);
+  } else {
+    await writeFile(target, archive, { flag: "wx" }).catch(async (error) => {
+      if (error?.code !== "EEXIST") throw error;
+      const existing = await readFile(target);
+      if (!archive.equals(existing)) {
+        throw Object.assign(new Error("指定輸出 artifact 已存在且 bytes 不同；拒絕覆寫。"), { code: "RELEASE_IMMUTABLE_CONFLICT" });
+      }
+    });
+  }
   return {
     path: target,
     extensionId: manifest.extensionId,

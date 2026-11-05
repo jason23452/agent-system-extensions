@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import { createServer } from "node:http";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -50,6 +51,50 @@ test("local install sends the exact validated archive and explicit target throug
     assert.equal(JSON.parse(stdout.text()).operation.operationId, operationId);
     assert.deepEqual(await readFile(join(root, "product-cache", "artifacts", "fixture-extension", "1.2.3", `${archiveHash}.aicxt`)), archive);
   } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("install rejects platform redirects without forwarding the multipart upload", { timeout: 15_000 }, async () => {
+  const root = await mkdtemp(join(tmpdir(), "extension-cli-install-redirect-"));
+  let forwardedRequests = 0;
+  let archiveSha256;
+  const targetServer = createServer((request, response) => {
+    forwardedRequests += 1;
+    request.resume();
+    response.writeHead(200, { "content-type": "application/json" });
+    response.end(JSON.stringify({ operation: operation("ticket03-redirect", "succeeded", identity(archiveSha256)) }));
+  });
+  const targetOrigin = await listen(targetServer);
+  const platformServer = createServer((request, response) => {
+    request.resume();
+    response.writeHead(307, { location: `${targetOrigin}/capture` });
+    response.end();
+  });
+  const platformOrigin = await listen(platformServer);
+  try {
+    const archive = createAicxt();
+    archiveSha256 = createHash("sha256").update(archive).digest("hex");
+    const archivePath = join(root, "fixture.aicxt");
+    await writeFile(archivePath, archive);
+    const stderr = capture();
+    const exitCode = await runCli([
+      "install", "fixture-extension", "--file", archivePath,
+      "--platform", platformOrigin, "--scope", "project", "--project", "demo-project", "--json",
+    ], {
+      cacheRoot: join(root, "product-cache"),
+      fetchImpl: globalThis.fetch,
+      randomUUID: () => "ticket03-redirect",
+      stdout: capture(),
+      stderr,
+    });
+
+    assert.notEqual(exitCode, 0, "a redirected install must not report success");
+    assert.equal(JSON.parse(stderr.text()).error.code, "PLATFORM_REDIRECT_REJECTED");
+    assert.equal(forwardedRequests, 0, "the redirect target must not receive the multipart upload");
+  } finally {
+    await close(platformServer);
+    await close(targetServer);
     await rm(root, { recursive: true, force: true });
   }
 });
@@ -421,4 +466,18 @@ function binaryResponse(value) {
 function capture() {
   const chunks = [];
   return { write: (chunk) => chunks.push(String(chunk)), text: () => chunks.join("") };
+}
+
+async function listen(server) {
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", resolve);
+  });
+  const address = server.address();
+  return `http://127.0.0.1:${address.port}`;
+}
+
+async function close(server) {
+  if (!server.listening) return;
+  await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
 }

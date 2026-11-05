@@ -1,13 +1,19 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process";
-import { copyFile, mkdir, readFile } from "node:fs/promises";
-import { constants } from "node:fs";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateExtensionCatalog } from "../packages/cli/src/lib/contracts.mjs";
 import { readAndValidateArchive, sha256 } from "../packages/cli/src/lib/archive.mjs";
-import { prepareCliRelease, prepareExtensionRelease } from "../packages/cli/src/lib/release-catalog.mjs";
+import {
+  findPinnedCliRelease,
+  findPinnedExtensionRelease,
+  prepareCliRelease,
+  prepareExtensionRelease,
+} from "../packages/cli/src/lib/release-catalog.mjs";
 import { publishImmutableReleaseAsset } from "../packages/cli/src/lib/release-publisher.mjs";
 import { packageError, usageError } from "../packages/cli/src/lib/errors.mjs";
 
@@ -37,23 +43,53 @@ async function prepareExtension(args) {
   if (manifest.extensionId !== extensionId || manifest.version !== version) {
     throw packageError("Extension manifest identity 與 prepare 輸入不一致。", "RELEASE_IDENTITY_MISMATCH");
   }
-  let artifactPath = args.options.artifact ? resolve(repositoryRoot, args.options.artifact) : join(extensionRoot, "dist", `${extensionId}-${version}.aicxt`);
-  if (!args.options.artifact) {
-    const packageJson = JSON.parse(await readFile(join(extensionRoot, "package.json"), "utf8"));
-    if (packageJson.scripts?.build) runNpm(["run", "build", `--workspace=${packageJson.name}`]);
-  }
   const sourceRevision = args.options["source-revision"] ?? gitRevision();
-  const result = await prepareExtensionRelease({ repositoryRoot, extensionId, version, artifactPath, sourceRevision });
-  return {
-    artifactPath,
-    artifactSha256: result.packageData.archiveSha256,
-    artifactSizeBytes: result.packageData.sizeBytes,
-    catalogPath: result.catalogPath,
-    nextAction: "獨立 review 通過後，依 releases/<extension>/<version>.json 的同一 artifact 執行 publish-extension。",
-    provenancePath: result.provenancePath,
-    sourceRevision,
-    tag: result.tag,
-  };
+  const artifactPath = join(extensionRoot, "dist", `${extensionId}-${version}.aicxt`);
+  const pinned = await findPinnedExtensionRelease({ repositoryRoot, extensionId, version, sourceRevision });
+  if (pinned) {
+    return {
+      artifactPath: pinned.artifactPath,
+      artifactSha256: pinned.packageData.archiveSha256,
+      artifactSizeBytes: pinned.packageData.sizeBytes,
+      catalogPath: pinned.catalogPath,
+      nextAction: "獨立 review 通過後，依 releases/<extension>/<version>.json 的同一 artifact 執行 publish-extension。",
+      provenancePath: pinned.provenancePath,
+      sourceRevision,
+      tag: `${extensionId}-v${version}`,
+    };
+  }
+  const customArtifactPath = args.options.artifact ? resolve(repositoryRoot, args.options.artifact) : undefined;
+  const stagingDirectory = join(extensionRoot, "dist", ".release-staging");
+  const stagingPath = customArtifactPath ? undefined : join(stagingDirectory, `${randomUUID()}.aicxt`);
+  try {
+    if (!customArtifactPath) {
+      const packageJson = JSON.parse(await readFile(join(extensionRoot, "package.json"), "utf8"));
+      if (!packageJson.scripts?.build) throw packageError("Extension package 未定義 build script。", "RELEASE_BUILD_FAILED");
+      await mkdir(stagingDirectory, { recursive: true });
+      runNpm(["run", "build", `--workspace=${packageJson.name}`, "--", "--output", stagingPath]);
+    }
+    const candidatePath = customArtifactPath ?? stagingPath;
+    const result = await prepareExtensionRelease({
+      repositoryRoot,
+      extensionId,
+      version,
+      artifactPath: candidatePath,
+      ...(!customArtifactPath ? { finalArtifactPath: artifactPath } : {}),
+      sourceRevision,
+    });
+    return {
+      artifactPath: customArtifactPath ?? artifactPath,
+      artifactSha256: result.packageData.archiveSha256,
+      artifactSizeBytes: result.packageData.sizeBytes,
+      catalogPath: result.catalogPath,
+      nextAction: "獨立 review 通過後，依 releases/<extension>/<version>.json 的同一 artifact 執行 publish-extension。",
+      provenancePath: result.provenancePath,
+      sourceRevision,
+      tag: result.tag,
+    };
+  } finally {
+    if (stagingPath) await rm(stagingPath, { force: true });
+  }
 }
 
 async function publishExtension(args) {
@@ -92,35 +128,54 @@ async function prepareCli(args) {
   const packageJson = JSON.parse(await readFile(join(repositoryRoot, "packages", "cli", "package.json"), "utf8"));
   const version = args.options.version ?? packageJson.version;
   if (version !== packageJson.version) throw packageError("--version 必須與 packages/cli/package.json 分離維護的 CLI 版本一致。", "RELEASE_VERSION_MISMATCH");
-  runNpm(["run", "build", "--workspace=@agent-system/extension-contracts"]);
-  runNpm(["run", "build", "--workspace=@agent-system/extensions-cli"]);
-  const temporaryDirectory = join(repositoryRoot, "packages", "cli", "dist", "release-tmp");
-  await mkdir(temporaryDirectory, { recursive: true });
-  const packed = runNpm(["pack", "--ignore-scripts", "--workspace=@agent-system/extensions-cli", `--pack-destination=${temporaryDirectory}`, "--json"]);
-  let packRecords;
-  try {
-    packRecords = JSON.parse(packed.stdout);
-  } catch {
-    throw packageError("npm pack 未回傳可解析的 tarball manifest。", "CLI_PACK_FAILED");
-  }
-  const expectedName = `agent-system-extensions-cli-${version}.tgz`;
-  const record = Array.isArray(packRecords) ? packRecords[0] : undefined;
-  if (!record || record.filename !== expectedName) throw packageError("npm pack 輸出檔名與獨立 CLI release 命名不一致。", "CLI_PACK_FAILED");
-  const packedPath = join(temporaryDirectory, record.filename);
-  const artifactPath = join(repositoryRoot, "packages", "cli", "dist", "release", expectedName);
-  await mkdir(dirname(artifactPath), { recursive: true });
-  await preserveArtifact(packedPath, artifactPath);
   const sourceRevision = args.options["source-revision"] ?? gitRevision();
-  const result = await prepareCliRelease({ repositoryRoot, version, artifactPath, sourceRevision });
-  return {
-    artifactPath,
-    artifactSha256: result.packageSha256,
-    artifactSizeBytes: result.sizeBytes,
-    nextAction: "CLI npm tarball 獨立於 .aicxt；獨立 review 通過後才執行 publish-cli。",
-    provenancePath: result.provenancePath,
-    sourceRevision,
-    tag: result.tag,
-  };
+  const artifactPath = join(repositoryRoot, "packages", "cli", "dist", "release", `agent-system-extensions-cli-${version}.tgz`);
+  const pinned = await findPinnedCliRelease({ repositoryRoot, version, sourceRevision });
+  if (pinned) {
+    return {
+      artifactPath: pinned.artifactPath,
+      artifactSha256: pinned.provenance.artifact.sha256,
+      artifactSizeBytes: pinned.provenance.artifact.sizeBytes,
+      nextAction: "CLI npm tarball 獨立於 .aicxt；獨立 review 通過後才執行 publish-cli。",
+      provenancePath: pinned.provenancePath,
+      sourceRevision,
+      tag: `cli-v${version}`,
+    };
+  }
+
+  const temporaryDirectory = await mkdtemp(join(tmpdir(), "agent-system-cli-release-"));
+  let stagingPath;
+  try {
+    runNpm(["run", "build", "--workspace=@agent-system/extension-contracts"]);
+    runNpm(["run", "build", "--workspace=@agent-system/extensions-cli"]);
+    const packed = runNpm(["pack", "--ignore-scripts", "--workspace=@agent-system/extensions-cli", `--pack-destination=${temporaryDirectory}`, "--json"]);
+    let packRecords;
+    try {
+      packRecords = JSON.parse(packed.stdout);
+    } catch {
+      throw packageError("npm pack 未回傳可解析的 tarball manifest。", "CLI_PACK_FAILED");
+    }
+    const expectedName = `agent-system-extensions-cli-${version}.tgz`;
+    const record = Array.isArray(packRecords) ? packRecords[0] : undefined;
+    if (!record || record.filename !== expectedName) throw packageError("npm pack 輸出檔名與獨立 CLI release 命名不一致。", "CLI_PACK_FAILED");
+    const packedPath = join(temporaryDirectory, record.filename);
+    await mkdir(dirname(artifactPath), { recursive: true });
+    stagingPath = join(dirname(artifactPath), `.agent-system-cli-${randomUUID()}.tgz`);
+    await writeFile(stagingPath, await readFile(packedPath), { flag: "wx" });
+    const result = await prepareCliRelease({ repositoryRoot, version, artifactPath: stagingPath, finalArtifactPath: artifactPath, sourceRevision });
+    return {
+      artifactPath,
+      artifactSha256: result.packageSha256,
+      artifactSizeBytes: result.sizeBytes,
+      nextAction: "CLI npm tarball 獨立於 .aicxt；獨立 review 通過後才執行 publish-cli。",
+      provenancePath: result.provenancePath,
+      sourceRevision,
+      tag: result.tag,
+    };
+  } finally {
+    if (stagingPath) await rm(stagingPath, { force: true });
+    await rm(temporaryDirectory, { recursive: true, force: true });
+  }
 }
 
 async function publishCli(args) {
@@ -151,19 +206,6 @@ async function publishCli(args) {
     sizeBytes: provenance.artifact.sizeBytes,
     runGh,
   });
-}
-
-async function preserveArtifact(source, destination) {
-  const sourceBytes = await readFile(source);
-  try {
-    await copyFile(source, destination, constants.COPYFILE_EXCL);
-  } catch (error) {
-    if (error?.code !== "EEXIST") throw error;
-    const existing = await readFile(destination);
-    if (sha256(sourceBytes) !== sha256(existing)) {
-      throw packageError("CLI 固定版本 tarball 已存在且 hash 不同；拒絕覆寫。", "RELEASE_IMMUTABLE_CONFLICT");
-    }
-  }
 }
 
 function runGh(args) {

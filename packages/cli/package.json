@@ -7,7 +7,9 @@
     "agent-system-extensions": "./dist/cli.mjs"
   },
   "files": [
-    "dist",
+    "dist/*.mjs",
+    "dist/**/*.mjs",
+    "dist/vendor/contracts",
     "README.md"
   ],
   "engines": {

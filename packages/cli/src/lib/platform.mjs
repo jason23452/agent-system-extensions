@@ -129,11 +129,19 @@ async function sendRetryRequest(record, action, dependencies) {
 
 async function request(fetchImpl, url, init, operationId) {
   if (typeof fetchImpl !== "function") throw platformError("Node.js fetch API 不可用。", "HTTP_CLIENT_UNAVAILABLE", { operationId });
+  let response;
   try {
-    return await fetchImpl(url, init);
+    response = await fetchImpl(url, { ...init, redirect: "manual" });
   } catch {
     throw platformError("平台連線失敗；安裝作業識別已保存，可使用 status 查詢結果。", "PLATFORM_UNAVAILABLE", { operationId });
   }
+  if (response.status >= 300 && response.status < 400) {
+    throw platformError("平台回應 redirect；為避免轉送 Extension 上傳，CLI 已拒絕此請求。", "PLATFORM_REDIRECT_REJECTED", {
+      operationId,
+      status: response.status,
+    });
+  }
+  return response;
 }
 
 async function readJsonResponse(response, operationId) {
