@@ -1,0 +1,12 @@
+{
+  "artifact": {
+    "assetName": "agent-system-extensions-cli-0.1.1.tgz",
+    "sha256": "4f86d80f2b5ed5b85b6e880f0b78d40575f423c14af636601c951b8cc31a9b49",
+    "sizeBytes": 28210,
+    "url": "https://github.com/jason23452/agent-system-extensions/releases/download/cli-v0.1.1/agent-system-extensions-cli-0.1.1.tgz"
+  },
+  "packageName": "@agent-system/extensions-cli",
+  "schemaVersion": "agent-system.cli-release-provenance.v1",
+  "sourceRevision": "623d4f215497646972457afe85124b598860d76f",
+  "version": "0.1.1"
+}
