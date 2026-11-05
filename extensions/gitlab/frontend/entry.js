@@ -111,8 +111,8 @@ function mount(host, container) {
 
   const retry = async () => {
     if (busy || !sourceState?.operation) return;
-    const operation = sourceState.operation;
-    const action = operation.retryAction === "query-first" ? "query-status" : operation.retryAction === "resume" ? "resume" : undefined;
+    const { operation } = sourceState;
+    const action = sourceSyncPresentation(sourceState).retryAction;
     if (!action) return;
     setBusy(true);
     try {
@@ -164,8 +164,8 @@ function renderState(state, sourceStatus, root, changes, retryButton) {
     ];
     root.querySelector(`[data-target="${target}"]`).textContent = lines.join(" · ");
   }
-  const operation = state.operation;
-  retryButton.classList.toggle("gitlab-hidden", !operation || operation.retryAction === "none");
+  const presentation = sourceSyncPresentation(state);
+  retryButton.classList.toggle("gitlab-hidden", !presentation.retryVisible);
   if (!state.changes) {
     changes.replaceChildren();
     return;
@@ -184,12 +184,57 @@ function renderState(state, sourceStatus, root, changes, retryButton) {
   changes.replaceChildren(heading, list);
 }
 
+export function sourceSyncPresentation(state) {
+  const operation = state?.operation;
+  const retryAction = operation?.retryAction === "query-first"
+    ? "query-status"
+    : operation?.retryAction === "resume" ? "resume" : undefined;
+  const retryVisible = retryAction !== undefined;
+
+  if (operation?.status === "succeeded") {
+    return { message: "同步完成；兩個 runtime 的 applied receipt 與 readiness 已分別確認。", retryAction, retryVisible };
+  }
+  if (operation?.status === "failed") {
+    const revision = operation.candidateRevision;
+    if (typeof revision !== "string" || revision.length === 0) {
+      return {
+        message: "同步失敗於候選 clone／驗證階段；本次作業未進入 target 套用。可重試或修改來源後重新同步。",
+        retryAction,
+        retryVisible,
+      };
+    }
+
+    const targetLabels = { main: "Main runtime", "workflow-test": "Workflow-test runtime" };
+    const applied = [];
+    const unconfirmed = [];
+    for (const target of ["main", "workflow-test"]) {
+      const receipt = state.targets[target];
+      if (receipt.appliedRevision === revision && receipt.appliedSourceUrl === operation.sourceUrl) {
+        const retryNote = receipt.readiness === "ready" ? "" : "；此 target 尚未 ready，需續跑";
+        applied.push(`${targetLabels[target]} 已套用候選 revision ${revision}（readiness ${receipt.readiness}${retryNote}）`);
+      } else {
+        unconfirmed.push(`${targetLabels[target]} 尚未確認套用此候選（目前 receipt revision ${receipt.appliedRevision ?? "未知／尚未套用"}；readiness ${receipt.readiness}）`);
+      }
+    }
+    const parts = [...applied, ...unconfirmed].join("；");
+    const headline = applied.length > 0 ? "同步部分失敗" : "同步失敗；尚無 target receipt 可確認候選已套用";
+    return {
+      message: `${headline}；候選 revision ${revision}：${parts}。可重試失敗階段或修改來源後重新同步。`,
+      retryAction,
+      retryVisible,
+    };
+  }
+  if (operation?.status === "unknown") return { message: "同步結果未知；請先查詢狀態，不會盲目重做。", retryAction, retryVisible };
+  if (operation?.status === "running") return { message: "同步作業進行中。", retryAction, retryVisible };
+  return {
+    message: state?.source?.status === "configured" ? "來源已設定；尚未同步或同步內容尚未全部就緒。" : "來源待設定。儲存 URL 不會啟動 clone。",
+    retryAction,
+    retryVisible,
+  };
+}
+
 function defaultStatusMessage(state) {
-  if (state.operation?.status === "succeeded") return "同步完成；兩個 runtime 的 applied receipt 與 readiness 已分別確認。";
-  if (state.operation?.status === "failed") return "同步失敗；既有已套用內容保留。可重試或修改來源後重新同步。";
-  if (state.operation?.status === "unknown") return "同步結果未知；請先查詢狀態，不會盲目重做。";
-  if (state.operation?.status === "running") return "同步作業進行中。";
-  return state.source.status === "configured" ? "來源已設定；尚未同步或同步內容尚未全部就緒。" : "來源待設定。儲存 URL 不會啟動 clone。";
+  return sourceSyncPresentation(state).message;
 }
 
 function readableError(error) {

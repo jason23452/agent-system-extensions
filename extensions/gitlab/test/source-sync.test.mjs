@@ -6,10 +6,12 @@ import { tmpdir } from "node:os";
 import { join, resolve, sep } from "node:path";
 import { promisify } from "node:util";
 import test from "node:test";
-import { prepareGitLabSource, validateGitLabSourceUrl } from "../backend/entry.js";
+import { discoverGitLabSkills, prepareGitLabSource, validateGitLabSourceUrl } from "../backend/entry.js";
 import { selectGitLabSkill } from "../plugins/gitlab/selector.js";
 
 const execFile = promisify(execFileCallback);
+const MAX_CANDIDATE_BYTES = 25 * 1024 * 1024;
+const MAX_CANDIDATE_FILES = 4_000;
 
 test("Project source URLs allow explicit HTTP(S) and reject embedded credentials or URL tricks", () => {
   assert.equal(validateGitLabSourceUrl("http://127.0.0.1:8123/repository.git"), "http://127.0.0.1:8123/repository.git");
@@ -137,6 +139,68 @@ test("duplicate frontmatter identities reject the candidate before returning res
   assert.ok(address && typeof address === "object");
   await assert.rejects(() => prepareGitLabSource(`http://127.0.0.1:${address.port}/remote.git`), /duplicate/i);
 });
+
+test("candidate byte accounting includes the generated index and accepts the exact legal boundary", async (context) => {
+  const root = await mkdtemp(join(tmpdir(), "extension-gitlab-candidate-byte-limit-"));
+  context.after(() => rm(root, { recursive: true, force: true }));
+  const document = Buffer.from("---\nname: bounded\ndescription: bounded\n---\n# Bounded\n", "utf8");
+  const index = Buffer.from(`${JSON.stringify({ schemaVersion: "agent-system.gitlab-skill-index.v1", skills: ["bounded"] }, null, 2)}\n`, "utf8");
+  const skillRoot = join(root, "bounded");
+  await mkdir(skillRoot, { recursive: true });
+  await writeFile(join(skillRoot, "SKILL.md"), document);
+  const firstAttachmentBytes = 10 * 1024 * 1024;
+  const secondAttachmentBytes = 10 * 1024 * 1024;
+  const thirdAttachmentBytes = MAX_CANDIDATE_BYTES - document.byteLength - index.byteLength - firstAttachmentBytes - secondAttachmentBytes;
+  await writeFile(join(skillRoot, "payload-a.bin"), Buffer.alloc(firstAttachmentBytes));
+  await writeFile(join(skillRoot, "payload-b.bin"), Buffer.alloc(secondAttachmentBytes));
+  await writeFile(join(skillRoot, "payload-c.bin"), Buffer.alloc(thirdAttachmentBytes));
+
+  const candidate = await discoverGitLabSkills(root, "revision-boundary");
+  const candidateBytes = candidate.resources.reduce((total, resource) => total
+    + Object.values(resource.files).reduce((resourceTotal, content) => resourceTotal + content.byteLength, 0), 0);
+  assert.equal(candidateBytes, MAX_CANDIDATE_BYTES);
+
+  await writeFile(join(skillRoot, "payload-c.bin"), Buffer.alloc(thirdAttachmentBytes + 1));
+  await assert.rejects(() => discoverGitLabSkills(root, "revision-over-boundary"), /too much Skill content/i);
+});
+
+test("candidate file accounting includes the generated index at the exact and over-limit boundaries", async (context) => {
+  const root = await mkdtemp(join(tmpdir(), "extension-gitlab-candidate-file-limit-"));
+  context.after(() => rm(root, { recursive: true, force: true }));
+  const skillRoot = join(root, "bounded");
+  await mkdir(skillRoot, { recursive: true });
+  await writeFile(join(skillRoot, "SKILL.md"), "---\nname: bounded\n---\n", "utf8");
+  await writeEmptyAttachments(skillRoot, MAX_CANDIDATE_FILES - 2);
+
+  const candidate = await discoverGitLabSkills(root, "revision-file-boundary");
+  const candidateFiles = candidate.resources.reduce((total, resource) => total + Object.keys(resource.files).length, 0);
+  assert.equal(candidateFiles, MAX_CANDIDATE_FILES);
+
+  await writeFile(join(skillRoot, `attachment-${MAX_CANDIDATE_FILES}.bin`), Buffer.alloc(0));
+  await assert.rejects(() => discoverGitLabSkills(root, "revision-too-many-files"), /too many (?:candidate )?files/i);
+});
+
+test("the existing per-file limit remains inclusive at its legal boundary", async (context) => {
+  const root = await mkdtemp(join(tmpdir(), "extension-gitlab-single-file-limit-"));
+  context.after(() => rm(root, { recursive: true, force: true }));
+  const skillRoot = join(root, "bounded");
+  await mkdir(skillRoot, { recursive: true });
+  await writeFile(join(skillRoot, "SKILL.md"), "---\nname: bounded\n---\n", "utf8");
+  await writeFile(join(skillRoot, "payload.bin"), Buffer.alloc(10 * 1024 * 1024));
+
+  const candidate = await discoverGitLabSkills(root, "revision-file-byte-boundary");
+  const skill = candidate.resources.find((resource) => resource.kind === "skills");
+  assert.equal(skill.files["payload.bin"].byteLength, 10 * 1024 * 1024);
+});
+
+async function writeEmptyAttachments(root, count) {
+  const batchSize = 100;
+  for (let start = 0; start < count; start += batchSize) {
+    const end = Math.min(start + batchSize, count);
+    await Promise.all(Array.from({ length: end - start }, (_, offset) =>
+      writeFile(join(root, `attachment-${start + offset}.bin`), Buffer.alloc(0))));
+  }
+}
 
 function closeServer(server) {
   return new Promise((resolvePromise, rejectPromise) => {

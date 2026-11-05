@@ -10,6 +10,7 @@ const MAX_SKILLS = 199;
 const MAX_SKILL_DOCUMENT_BYTES = 512 * 1024;
 const MAX_SKILL_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_CANDIDATE_BYTES = 25 * 1024 * 1024;
+const MAX_CANDIDATE_FILES = 4_000;
 const SOURCE_SYNC_TOOL = { kind: "tool", name: "gitlab_select_skill" };
 
 export function validateGitLabSourceUrl(value) {
@@ -79,10 +80,12 @@ export async function discoverGitLabSkills(repository, revision = "") {
   if (paths.length === 0) throw new Error("The selected repository contains no SKILL.md files.");
   if (paths.length > MAX_SKILLS) throw new Error("The selected repository contains too many Skills to register.");
 
+  const skillDirectories = new Set(paths.map((path) => resolve(dirname(path))));
+  const preflight = await preflightSkillFiles(paths, skillDirectories);
   const entries = [];
   const identities = new Set();
   for (const path of paths) {
-    const name = await readSkillName(path);
+    const { name, content } = await readSkillName(path);
     if (!SKILL_NAME_PATTERN.test(name) || name.length > 64) {
       throw new Error("The selected repository contains an invalid Skill frontmatter name.");
     }
@@ -92,26 +95,24 @@ export async function discoverGitLabSkills(repository, revision = "") {
     if (!isPathInside(repositoryRoot, directory) && directory !== repositoryRoot) {
       throw new Error("A GitLab Skill directory escapes the cloned repository.");
     }
-    entries.push({ directory, name, path });
-  }
-
-  const skillDirectories = new Set(entries.map(({ directory }) => resolve(directory)));
-  const resources = [];
-  let candidateBytes = 0;
-  for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {
-    const files = await readSkillFiles(entry.directory, skillDirectories, entry.directory);
-    candidateBytes += Object.values(files).reduce((total, content) => total + content.byteLength, 0);
-    if (candidateBytes > MAX_CANDIDATE_BYTES) throw new Error("The selected repository contains too much Skill content to synchronize.");
-    resources.push({ kind: "skills", name: entry.name, files });
+    const document = preflight.filesBySkill.get(resolve(directory))?.find((file) => resolve(file.path) === resolve(path));
+    if (!document || document.size !== content.byteLength) throw new Error("A GitLab Skill document changed after candidate preflight.");
+    entries.push({ directory, documentContent: content, name, path });
   }
 
   const names = entries.map(({ name }) => name).sort((left, right) => left.localeCompare(right));
+  const skillIndex = Buffer.from(`${JSON.stringify({ schemaVersion: "agent-system.gitlab-skill-index.v1", skills: names }, null, 2)}\n`, "utf8");
+  assertCandidateBudget(preflight.fileCount + 1, preflight.byteCount + skillIndex.byteLength);
+
+  const resources = [];
+  for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {
+    const files = await readSkillFiles(preflight.filesBySkill.get(resolve(entry.directory)) ?? [], entry.path, entry.documentContent);
+    resources.push({ kind: "skills", name: entry.name, files });
+  }
   resources.push({
     kind: "plugins",
     name: "gitlab",
-    files: {
-      "source-skills.json": Buffer.from(`${JSON.stringify({ schemaVersion: "agent-system.gitlab-skill-index.v1", skills: names }, null, 2)}\n`, "utf8"),
-    },
+    files: { "source-skills.json": skillIndex },
   });
   return {
     revision,
@@ -195,14 +196,14 @@ async function readSkillName(path) {
   if (!details.isFile() || details.isSymbolicLink() || details.size > MAX_SKILL_DOCUMENT_BYTES) {
     throw new Error("A GitLab Skill SKILL.md is not a supported regular file.");
   }
-  const content = await readFile(path, "utf8");
-  const frontmatter = /^---\s*\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(content)?.[1];
+  const content = await readFile(path);
+  const frontmatter = /^---\s*\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(content.toString("utf8"))?.[1];
   const line = frontmatter?.split(/\r?\n/).find((item) => /^name\s*:/.test(item));
   if (!line) throw new Error("A GitLab Skill is missing its name in SKILL.md frontmatter.");
   const raw = line.slice(line.indexOf(":") + 1).trim();
   const name = parseYamlScalar(raw);
   if (!name) throw new Error("A GitLab Skill has an empty name in SKILL.md frontmatter.");
-  return name;
+  return { content, name };
 }
 
 function parseYamlScalar(value) {
@@ -218,32 +219,72 @@ function parseYamlScalar(value) {
   return value.replace(/\s+#.*$/, "").trim();
 }
 
-async function readSkillFiles(directory, skillDirectories, currentSkillRoot) {
-  const files = {};
-  const visit = async (current) => {
-    const entries = (await readdir(current, { withFileTypes: true })).sort((left, right) => left.name.localeCompare(right.name));
-    for (const entry of entries) {
-      if (entry.name === ".git" || entry.name === "node_modules") continue;
-      const path = join(current, entry.name);
-      if (entry.isSymbolicLink()) throw new Error("A GitLab Skill contains an unsupported symbolic link.");
-      if (entry.isDirectory()) {
-        if (resolve(path) !== resolve(currentSkillRoot) && skillDirectories.has(resolve(path))) continue;
-        await visit(path);
-      } else if (entry.isFile()) {
-        const details = await lstat(path);
-        if (!details.isFile() || details.size > MAX_SKILL_FILE_BYTES) {
-          throw new Error("A GitLab Skill contains an unsupported or oversized attachment.");
+async function preflightSkillFiles(paths, skillDirectories) {
+  const documentPaths = new Set(paths.map((path) => resolve(path)));
+  const filesBySkill = new Map();
+  let fileCount = 0;
+  let byteCount = 0;
+
+  for (const documentPath of paths) {
+    const skillRoot = dirname(documentPath);
+    const files = [];
+    const visit = async (directory) => {
+      const entries = (await readdir(directory, { withFileTypes: true })).sort((left, right) => left.name.localeCompare(right.name));
+      for (const entry of entries) {
+        if (entry.name === ".git" || entry.name === "node_modules") continue;
+        const path = join(directory, entry.name);
+        if (entry.isSymbolicLink()) throw new Error("A GitLab Skill contains an unsupported symbolic link.");
+        if (entry.isDirectory()) {
+          if (resolve(path) !== resolve(skillRoot) && skillDirectories.has(resolve(path))) continue;
+          await visit(path);
+          continue;
         }
-        const fileName = relative(directory, path).split(sep).join("/");
+        if (!entry.isFile()) throw new Error("A GitLab Skill contains an unsupported filesystem entry.");
+        const details = await lstat(path);
+        const isSkillDocument = documentPaths.has(resolve(path));
+        const maxBytes = isSkillDocument ? MAX_SKILL_DOCUMENT_BYTES : MAX_SKILL_FILE_BYTES;
+        if (!details.isFile() || details.isSymbolicLink() || details.size > maxBytes) {
+          throw new Error(isSkillDocument
+            ? "A GitLab Skill SKILL.md is not a supported regular file."
+            : "A GitLab Skill contains an unsupported or oversized attachment.");
+        }
+        const fileName = relative(skillRoot, path).split(sep).join("/");
         if (!fileName || fileName.startsWith("../") || isAbsolute(fileName)) throw new Error("A GitLab Skill attachment path is invalid.");
-        files[fileName] = await readFile(path);
-      } else {
-        throw new Error("A GitLab Skill contains an unsupported filesystem entry.");
+        files.push({ fileName, path, size: details.size });
+        fileCount += 1;
+        byteCount += details.size;
+        assertCandidateBudget(fileCount + 1, byteCount);
       }
+    };
+    await visit(skillRoot);
+    filesBySkill.set(resolve(skillRoot), files);
+  }
+
+  return { byteCount, fileCount, filesBySkill };
+}
+
+async function readSkillFiles(candidateFiles, documentPath, documentContent) {
+  const files = {};
+  for (const candidate of candidateFiles) {
+    const path = resolve(candidate.path);
+    if (path === resolve(documentPath)) {
+      files[candidate.fileName] = documentContent;
+      continue;
     }
-  };
-  await visit(directory);
+    const details = await lstat(path);
+    if (!details.isFile() || details.isSymbolicLink() || details.size !== candidate.size || details.size > MAX_SKILL_FILE_BYTES) {
+      throw new Error("A GitLab Skill attachment changed or became unsupported after candidate preflight.");
+    }
+    const content = await readFile(path);
+    if (content.byteLength !== candidate.size) throw new Error("A GitLab Skill attachment changed while being read.");
+    files[candidate.fileName] = content;
+  }
   return files;
+}
+
+function assertCandidateBudget(fileCount, byteCount) {
+  if (fileCount > MAX_CANDIDATE_FILES) throw new Error("The selected repository contains too many candidate files to synchronize.");
+  if (byteCount > MAX_CANDIDATE_BYTES) throw new Error("The selected repository contains too much Skill content to synchronize.");
 }
 
 function isPathInside(root, path) {
