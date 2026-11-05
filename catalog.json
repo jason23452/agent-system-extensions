@@ -1,0 +1,34 @@
+{
+  "contractVersion": "1.0.0",
+  "extensions": [
+    {
+      "extensionId": "gitlab",
+      "latestVersion": "2.0.0",
+      "releases": [
+        {
+          "artifact": {
+            "sha256": "322b26c0d95be0bf4a1c87be945febee3ba8245f542649e020d2d4b3b2a7e939",
+            "sizeBytes": 34493,
+            "url": "https://github.com/jason23452/agent-system-extensions/releases/download/gitlab-v2.0.0/gitlab-2.0.0.aicxt"
+          },
+          "contractVersion": "1.0.0",
+          "extensionId": "gitlab",
+          "hostRequirements": {
+            "minHostVersion": "0.0.0"
+          },
+          "metadata": {
+            "icon": "gitlab",
+            "capabilities": [
+              "project-source-sync",
+              "native-skills",
+              "gitlab-select-skill"
+            ]
+          },
+          "schemaVersion": "agent-system.extension-release.v1",
+          "version": "2.0.0"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": "agent-system.extension-catalog.v1"
+}

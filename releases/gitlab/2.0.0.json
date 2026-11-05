@@ -1,0 +1,12 @@
+{
+  "artifact": {
+    "assetName": "gitlab-2.0.0.aicxt",
+    "sha256": "322b26c0d95be0bf4a1c87be945febee3ba8245f542649e020d2d4b3b2a7e939",
+    "sizeBytes": 34493,
+    "url": "https://github.com/jason23452/agent-system-extensions/releases/download/gitlab-v2.0.0/gitlab-2.0.0.aicxt"
+  },
+  "extensionId": "gitlab",
+  "schemaVersion": "agent-system.extension-release-provenance.v1",
+  "sourceRevision": "e638b600a261e1ad433b65661bade3ded7a7737d",
+  "version": "2.0.0"
+}
