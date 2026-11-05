@@ -1,9 +1,21 @@
 {
   "name": "@agent-system/extensions-cli",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
+  "description": "Agent System Extensions installation and packaging CLI.",
+  "bin": {
+    "agent-system-extensions": "./dist/cli.mjs"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "engines": {
     "node": ">=24 <25"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "npm run build --workspace=@agent-system/extension-contracts && npm run build && node --test --test-timeout=60000 test/*.test.mjs",
+    "typecheck": "node scripts/check.mjs"
   }
 }
