@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "agent-system.extension-package.v1",
+  "extensionId": "gitlab",
+  "displayName": "GitLab Skills",
+  "version": "2.0.0",
+  "scope": "project",
+  "description": "Project-scoped GitLab source synchronization for native Skills and the GitLab selector Plugin.",
+  "metadata": {
+    "icon": "gitlab",
+    "capabilities": ["project-source-sync", "native-skills", "gitlab-select-skill"]
+  },
+  "hostContract": {
+    "schemaVersion": "agent-system.extension-host.v1",
+    "settings": {
+      "schemaVersion": "agent-system.extension-settings.v1",
+      "properties": {
+        "sourceUrl": {
+          "type": "string",
+          "description": "此 Project 明確選取的 HTTP(S) GitLab clone URL；儲存不會同步。"
+        }
+      }
+    }
+  },
+  "backend": {
+    "entry": "backend/entry.js"
+  },
+  "frontend": {
+    "entry": "frontend/entry.js"
+  },
+  "configuration": {
+    "entry": "config/extension.json"
+  },
+  "resources": {
+    "plugins": [
+      {
+        "path": "plugins/gitlab.ts",
+        "files": ["plugins/gitlab/gitlab.ts", "plugins/gitlab/selector.js"]
+      }
+    ]
+  },
+  "pluginContributions": [
+    {
+      "pluginName": "gitlab",
+      "contributions": [{ "kind": "tool", "name": "gitlab_select_skill" }]
+    }
+  ]
+}

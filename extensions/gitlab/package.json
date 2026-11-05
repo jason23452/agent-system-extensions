@@ -3,5 +3,10 @@
   "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "GitLab Agent System Extension 工作區；產品內容由其負責票券交付。"
+  "description": "Project-scoped GitLab Skill source synchronization Extension.",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test --test-timeout=20000 test/*.test.mjs",
+    "typecheck": "node --check backend/entry.js && node --check frontend/entry.js && node --check plugins/gitlab/selector.js && node --check build.mjs"
+  }
 }

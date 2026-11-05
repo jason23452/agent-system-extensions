@@ -1,0 +1,13 @@
+{
+  "$schema": "https://agent-system.local/schemas/extension-configuration.v1.json",
+  "platforms": [
+    {
+      "id": "gitlab",
+      "displayName": "GitLab Skills",
+      "description": "依 Project 明確選取的 GitLab repository 同步原生 Skills，並保留既有 Workflow reference。",
+      "shortName": "GL",
+      "tone": "gitlab",
+      "capabilities": ["project-source-sync", "native-skills"]
+    }
+  ]
+}

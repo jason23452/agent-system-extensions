@@ -12,9 +12,9 @@
     "extensions/*"
   ],
   "scripts": {
-    "build": "npm run build --workspace=@agent-system/extension-contracts",
-    "test": "npm run test --workspace=@agent-system/extension-contracts",
-    "typecheck": "npm run typecheck --workspace=@agent-system/extension-contracts"
+    "build": "npm run build --workspace=@agent-system/extension-contracts && npm run build --workspace=@agent-system/extension-gitlab",
+    "test": "npm run test --workspace=@agent-system/extension-contracts && npm run test --workspace=@agent-system/extension-gitlab",
+    "typecheck": "npm run typecheck --workspace=@agent-system/extension-contracts && npm run typecheck --workspace=@agent-system/extension-gitlab"
   },
   "devDependencies": {
     "typescript": "5.9.3"

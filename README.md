@@ -9,4 +9,17 @@
 - Extension release 是不可變的 `.aicxt` artifact。Catalog 與 release 身分包含 extension ID、version 及 SHA-256；catalog 明確指定每個 Extension 的 latest 版本。
 - `packages/contracts` 是版本化 release、catalog、package metadata、host、lifecycle、source-sync wire contract 與共用 conformance fixtures 的唯一維護位置。
 
-初始工作區刻意不包含產品 Extension 原始碼或可執行 CLI；這些內容由後續交付票券負責。
+GitLab Extension source-sync 由本 repo 的 `extensions/gitlab/` workspace 擁有；其他 Extension 與 CLI 內容由各自負責票券交付。
+
+## GitLab Extension 驗證
+
+在 repo 根目錄執行：
+
+```sh
+npm ci
+npm run test --workspace=@agent-system/extension-gitlab
+npm run typecheck --workspace=@agent-system/extension-gitlab
+npm run build --workspace=@agent-system/extension-gitlab
+```
+
+套件建置輸出為 `extensions/gitlab/dist/gitlab-2.0.0.aicxt`；`dist/` 為忽略的本機產物，不提交到 source repo。
