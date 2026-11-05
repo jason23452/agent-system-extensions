@@ -1,10 +1,13 @@
 import { readFile } from "node:fs/promises";
+import { performance } from "node:perf_hooks";
 import { basename } from "node:path";
 import { sha256 } from "./archive.mjs";
 import { packageError } from "./errors.mjs";
 
 const API_ROOT = "https://api.github.com/repos";
 const REPOSITORY = "jason23452/agent-system-extensions";
+const RELEASE_VERIFICATION_TIMEOUT_MS = 30_000;
+const RELEASE_VISIBILITY_RETRY_DELAYS_MS = [250, 500, 1_000, 2_000, 4_000, 8_000, 8_000];
 
 export async function publishImmutableReleaseAsset(options) {
   const assetPath = options.assetPath;
@@ -51,18 +54,39 @@ export async function publishImmutableReleaseAsset(options) {
     });
   }
 
-  const created = await getRelease(fetchImpl, releaseUrl);
+  const created = await waitForCreatedRelease(fetchImpl, releaseUrl, options);
   if (!created) throw packageError("GitHub CLI 回報成功，但公開 Release 尚不可見。", "GITHUB_RELEASE_VERIFY_FAILED");
   await assertPublishedAssetIdentity(fetchImpl, created, assetName, options.sha256, options.sizeBytes);
   return { assetName, releaseId: created.id, state: "published", tag: options.tag };
 }
 
-async function getRelease(fetchImpl, url) {
+async function waitForCreatedRelease(fetchImpl, url, options) {
+  const deadline = performance.now() + RELEASE_VERIFICATION_TIMEOUT_MS;
+  const sleepImpl = options.sleepImpl ?? ((milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)));
+
+  for (let attempt = 0; attempt <= RELEASE_VISIBILITY_RETRY_DELAYS_MS.length; attempt += 1) {
+    const remainingMs = deadline - performance.now();
+    if (remainingMs <= 0) break;
+
+    const release = await getRelease(fetchImpl, url, remainingMs);
+    if (release) return release;
+
+    const retryDelayMs = RELEASE_VISIBILITY_RETRY_DELAYS_MS[attempt];
+    if (retryDelayMs === undefined) break;
+    const timeLeftMs = deadline - performance.now();
+    if (timeLeftMs <= 0) break;
+    await sleepImpl(Math.min(retryDelayMs, timeLeftMs));
+  }
+
+  return undefined;
+}
+
+async function getRelease(fetchImpl, url, timeoutMs = 30_000) {
   let response;
   try {
     response = await fetchImpl(url, {
       headers: { accept: "application/vnd.github+json", "x-github-api-version": "2022-11-28" },
-      signal: AbortSignal.timeout(30_000),
+      signal: AbortSignal.timeout(Math.max(1, Math.ceil(timeoutMs))),
     });
   } catch {
     throw packageError("無法查詢公開 GitHub Release；不執行寫入。", "GITHUB_RELEASE_LOOKUP_FAILED");
