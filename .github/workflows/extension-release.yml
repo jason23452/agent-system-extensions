@@ -20,6 +20,7 @@ jobs:
         with:
           node-version: 24
       - run: npm test
+      - run: npm run extensions:verify
       - if: startsWith(github.ref_name, 'synthetic-')
         run: npm run fixture:verify
       - name: Validate, publish and anonymously verify the exact package asset

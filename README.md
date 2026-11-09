@@ -1,6 +1,6 @@
 # Agent System Extensions 分發 repo
 
-此公開 repo 維護共用 Extension Catalog 契約、精確版本下載器、僅更新 catalog 的 CLI，以及發布自動化。目前尚未包含五套正式 Extension；其來源與首批正式版由 Ticket 02 負責。
+此公開 repo 維護共用 Extension Catalog 契約、精確版本下載器、僅更新 catalog 的 CLI，以及發布自動化。五套正式 Extension 的 source、專屬測試、builder 與首批 `2.0.0` 產物位於 `packages/`。
 
 ## Release 契約
 
@@ -45,5 +45,7 @@ Linux 請使用 `curl -fL <release-asset-url> -o agent-system-extension-distribu
 
 - 使用 Node 24 執行 `npm test`；測試只使用 Node 內建 test runner，無需安裝步驟。
 - `npm run fixture:build` 可確定性地重建保留的 synthetic `.aicxt`；`npm run fixture:verify` 驗證已追蹤 archive 可重現。
+- `npm run extensions:build` 會從五套 `packages/<extensionId>/source/` 重建穩定 ZIP、更新 manifest integrity，並產生含來源 revision／tree、正式 tag、asset 大小與 SHA-256 的 `build-info.json`；`npm run extensions:verify` 只驗證、不寫入。
+- XMind 專屬 builder 將 `builder-tools/` 內的 converter／editor 內嵌到 Workflow 資產；生成內容只寫入 builder 的隔離暫存目錄，不改寫 source。
 - 發布 Extension 時，先將已驗證的 `.aicxt` 放在 `packages/<extensionId>/<extensionId>-<SemVer>.aicxt`，再推送完全相符的 tag。Release workflow 會建立不可變 Release 並更新完整 catalog。
 - 發布 CLI 時推送 `cli/v<package-version>`。Workflow 會打包並附加 `.tgz`；不執行 `npm publish`。

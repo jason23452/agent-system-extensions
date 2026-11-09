@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "agent-system.extension-package.v1",
+  "extensionId": "xmind",
+  "displayName": "XMind",
+  "version": "1.0.0",
+  "description": "XMind .xmind 讀取、轉 Markdown、安全編輯與 AI 節點延伸 Agent package。",
+  "frontend": {
+    "entry": "frontend/entry.js",
+    "integrity": {
+      "frontend/entry.js": "sha256-98a4f39a49f9668b1e1e8099a49d46a84e25124a3c6c74d3e84b7ff1b1e14e00"
+    }
+  },
+  "workflows": [
+    "workflows/workflow-xmind.json",
+    "workflows/workflow-xmind-plan.json"
+  ],
+  "metadata": {
+    "installMode": "workflow-command-extend",
+    "packageFormat": ".aicxt",
+    "workflowId": "workflow-xmind",
+    "capabilities": [
+      "xmind.read",
+      "xmind.to-markdown",
+      "xmind.edit",
+      "xmind.generate",
+      "xmind.plan"
+    ],
+    "extendResources": true
+  }
+}

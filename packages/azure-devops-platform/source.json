@@ -1,0 +1,12 @@
+{
+  "extensionId": "azure-devops-platform",
+  "repository": "agent-system",
+  "snapshotCommit": "b3040627401c9fe6a6955051022f0e602d602398",
+  "sourceRevision": "b3040627401c9fe6a6955051022f0e602d602398",
+  "sourceContentCommit": "3e39c46acddee78f21b10753adf04df382206c9a",
+  "sourcePath": "backend/extension-packages/azure-devops-platform",
+  "sourceTree": "e7404d57766fb26b67657e090f1ef90aee2c170c",
+  "sourcePackageVersion": "1.6.47",
+  "releaseVersion": "2.0.0",
+  "notes": "封裝來源為固定 integration tree；sourceContentCommit 是此 package path 最後異動的原始 commit。"
+}

@@ -21,6 +21,7 @@ jobs:
       - run: node --version
       - run: npm test
       - run: npm run fixture:verify
+      - run: npm run extensions:verify
       - name: Pack and launch both CLI entry points
         run: |
           npm pack ./packages/cli --pack-destination "$RUNNER_TEMP"

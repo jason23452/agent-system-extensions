@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "agent-system.workflow.v3",
+  "id": "workflow-xmind-plan",
+  "name": "XMind Planning Workflow",
+  "description": "依整體需求產生完整 XMind 規劃的無工具 Agent App。",
+  "scope": "global",
+  "nodes": [
+    {
+      "id": "command",
+      "type": "resource.command",
+      "position": {
+        "x": 100,
+        "y": 180
+      },
+      "data": {
+        "mode": "managed",
+        "name": "xmind-plan",
+        "scope": "global",
+        "content": "---\ndescription: 依整體需求產生完整 XMind 規劃\nagent: xmind-plan-agent\n---\n依 `$ARGUMENTS` 產生一份可直接繪製的完整心智圖規劃。\n\n- 根據需求建立明確中心主題、6 至 10 個互補的一級分支，並視需要提供二至三級子節點。\n- 沿用使用者語言，節點簡潔、具體且不重複，不使用任何工具或檔案操作。\n- 唯一輸出是 `<xmind-plan>{\"title\":\"中心主題\",\"nodes\":[{\"title\":\"分支\",\"note\":\"可選\",\"children\":[]}]}</xmind-plan>`。\n- 不得加入 Markdown code fence、前言、分析或解釋。\n\n$ARGUMENTS"
+      }
+    },
+    {
+      "id": "agent",
+      "type": "resource.agent",
+      "position": {
+        "x": 420,
+        "y": 180
+      },
+      "data": {
+        "mode": "managed",
+        "name": "xmind-plan-agent",
+        "scope": "global",
+        "content": "---\nname: xmind-plan-agent\ndescription: 將整體需求轉成完整且專業的多層 XMind 規劃\nmode: primary\nmodel: opencode/deepseek-v4-flash-free\npermission:\n  \"*\": deny\n---\n你是 XMind 規劃 Agent。將使用者的整體需求整理成結構完整、分支互補且可直接繪製的心智圖。\n\n- 建立一個中心主題與 6 至 10 個一級分支，必要時加入二至三級 children。\n- 沿用需求語言；每個 title 最多 72 字元，note 最多 240 字元。\n- 不使用工具、不讀寫檔案、不描述推理。\n- 唯一輸出是 `<xmind-plan>{\"title\":\"中心主題\",\"nodes\":[{\"title\":\"分支\",\"note\":\"可選\",\"children\":[]}]}</xmind-plan>`。"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "command-agent",
+      "source": "command",
+      "target": "agent",
+      "kind": "capability",
+      "sourceHandle": "capability",
+      "targetHandle": "agent"
+    }
+  ],
+  "metadata": {
+    "role": "xmind-extension",
+    "packageFormat": ".aicxt",
+    "packageArtifact": "xmind.aicxt",
+    "workflowAsset": "workflows/workflow-xmind-plan.json",
+    "capabilities": [
+      "xmind.plan"
+    ]
+  },
+  "variables": {},
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z"
+}

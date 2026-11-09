@@ -1,0 +1,177 @@
+{
+  "schemaVersion": "agent-system.extension-package.v1",
+  "extensionId": "azure-devops-platform",
+  "displayName": "Azure DevOps 平台",
+  "version": "1.6.47",
+  "scope": "project",
+  "retiredResources": [
+    {
+      "kind": "mcp",
+      "name": "azure-devops",
+      "contextMigration": {
+        "contextEnvironment": "ado_mcp_context",
+        "organizationCommandIndex": 2,
+        "projectEnvironment": "ado_mcp_project",
+        "settingsKey": "azureDevOps"
+      }
+    }
+  ],
+  "description": "以 Extension 驗證 Azure DevOps PAT，並管理 Git Repository、Pull Request 查詢與建立、Pipeline YAML 提交、Pipeline 定義、預覽、明確執行及 run 狀態查詢、Work Item 建立、查詢、revision 歷史與更新、Wiki、Git 身分、Project、Team、Board、Iteration、AssignedTo 與 Dashboard。",
+  "backend": {
+    "entry": "backend/entry.js",
+    "integrity": {
+      "backend/entry.js": "sha256-7f752288d225afd9b28196419858e5582f6cba58321361bb14667e2c4fbc601e"
+    }
+  },
+  "frontend": {
+    "entry": "frontend/entry.js",
+    "integrity": {
+      "frontend/entry.js": "sha256-53afee9d9ca13e95994a77e1c40e4055dbc7adeda6de8c3aac7680b202927e81"
+    }
+  },
+  "configuration": {
+    "entry": "config/extension.json",
+    "integrity": {
+      "config/extension.json": "sha256-b745844e0e091b62a24e3a29492dc733111cdcaa6f8d091c88e31f6ecf00256e"
+    }
+  },
+  "resources": {
+    "plugins": [
+      {
+        "files": [
+          "plugins/azure-devops-platform/agent/context.ts",
+          "plugins/azure-devops-platform/agent/parameters.ts",
+          "plugins/azure-devops-platform/azure-devops-platform.ts",
+          "plugins/azure-devops-platform/backend-client/client.ts",
+          "plugins/azure-devops-platform/skills/minimal-api-service-cloud-run-pipeline/SKILL.md",
+          "plugins/azure-devops-platform/tools/clone.ts",
+          "plugins/azure-devops-platform/tools/credential-cache.ts",
+          "plugins/azure-devops-platform/tools/git.ts",
+          "plugins/azure-devops-platform/tools/parameters.ts",
+          "plugins/azure-devops-platform/tools/pipeline.ts",
+          "plugins/azure-devops-platform/tools/pipeline-yaml.ts",
+          "plugins/azure-devops-platform/tools/pull-request-get.ts",
+          "plugins/azure-devops-platform/tools/pull-request.ts",
+          "plugins/azure-devops-platform/tools/pull-request-list.ts",
+          "plugins/azure-devops-platform/tools/pull.ts",
+          "plugins/azure-devops-platform/tools/repository-path.ts",
+          "plugins/azure-devops-platform/tools/repository.ts",
+          "plugins/azure-devops-platform/tools/repository-list.ts",
+          "plugins/azure-devops-platform/tools/types.ts",
+          "plugins/azure-devops-platform/tools/validation.ts",
+          "plugins/azure-devops-platform/tools/wiki.ts",
+          "plugins/azure-devops-platform/tools/work-item-details.ts",
+          "plugins/azure-devops-platform/tools/work-item-revisions.ts",
+          "plugins/azure-devops-platform/tools/work-item.ts"
+        ],
+        "path": "plugins/azure-devops-platform.ts",
+        "integrity": "sha256-32e46fd87afa0c0d559b00cb677bc8b3ec9b36323ece2b007668abb40336dbf1"
+      }
+    ]
+  },
+  "pluginContributions": [
+    {
+      "pluginName": "azure-devops-platform",
+      "contributions": [
+        {
+          "kind": "tool",
+          "name": "azure_devops_create_repository"
+        },
+        {
+          "kind": "tool",
+          "name": "azure_devops_git_config"
+        },
+        {
+          "kind": "tool",
+          "name": "azure_devops_configure_remote"
+        },
+        {
+          "kind": "tool",
+          "name": "azure_devops_git_pull"
+        },
+        {
+          "kind": "tool",
+          "name": "azure_devops_push"
+        },
+        {
+          "kind": "tool",
+          "name": "azure_devops_clone_repository"
+        },
+        {
+          "kind": "tool",
+          "name": "azure_devops_list_repositories"
+        },
+        {
+          "kind": "tool",
+          "name": "azure_devops_list_pipelines"
+        },
+        {
+          "kind": "tool",
+          "name": "azure_devops_create_pipeline"
+        },
+        {
+          "kind": "tool",
+          "name": "azure_devops_preview_pipeline"
+        },
+        {
+          "kind": "tool",
+          "name": "azure_devops_run_pipeline"
+        },
+        {
+          "kind": "tool",
+          "name": "azure_devops_get_pipeline_run"
+        },
+        {
+          "kind": "tool",
+          "name": "azure_devops_list_wikis"
+        },
+        {
+          "kind": "tool",
+          "name": "azure_devops_write_wiki_page"
+        },
+        {
+          "kind": "tool",
+          "name": "azure_devops_create_work_item"
+        },
+        {
+          "kind": "tool",
+          "name": "azure_devops_get_work_item"
+        },
+        {
+          "kind": "tool",
+          "name": "azure_devops_list_work_item_revisions"
+        },
+        {
+          "kind": "tool",
+          "name": "azure_devops_update_work_item"
+        },
+        {
+          "kind": "tool",
+          "name": "azure_devops_create_pull_request"
+        },
+        {
+          "kind": "tool",
+          "name": "azure_devops_get_pull_request"
+        },
+        {
+          "kind": "tool",
+          "name": "azure_devops_list_pull_requests"
+        },
+        {
+          "kind": "tool",
+          "name": "azure_devops_publish_pipeline_yaml"
+        },
+        {
+          "kind": "skill",
+          "name": "minimal-api-service-cloud-run-pipeline"
+        }
+      ]
+    }
+  ],
+  "workflowNodes": [
+    {
+      "type": "resource.plugin",
+      "name": "azure-devops-platform"
+    }
+  ]
+}

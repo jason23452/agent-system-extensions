@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "agent-system.extension-package.v1",
+  "extensionId": "gitlab",
+  "displayName": "GitLab Skills",
+  "version": "2.1.2",
+  "scope": "project",
+  "description": "Project-scoped GitLab Skills Plugin with separately saved repository URL, validated synchronization, and a source-confined selector Tool.",
+  "backend": {
+    "entry": "backend/entry.js",
+    "integrity": {
+      "backend/entry.js": "sha256-3b1aa46759437a035a9e2baaa21e9ae57b356e995e4e9cdeeee58e1ccc20e5ba"
+    },
+    "lifecycle": {
+      "install": "install-skills"
+    }
+  },
+  "frontend": {
+    "entry": "frontend/entry.js",
+    "integrity": {
+      "frontend/entry.js": "sha256-placeholder"
+    }
+  },
+  "resources": {
+    "plugins": [
+      {
+        "files": [
+          "plugins/gitlab/gitlab.ts",
+          "plugins/gitlab/gitlab-selector.js"
+        ],
+        "path": "plugins/gitlab.ts",
+        "integrity": "sha256-08e28e2d97473b148d518f706332699f538c39b7268b7a1c6aaf0286bffcebf0"
+      }
+    ]
+  },
+  "pluginContributions": [
+    {
+      "pluginName": "gitlab",
+      "contributions": [
+        {
+          "kind": "tool",
+          "name": "gitlab_select_skill"
+        }
+      ]
+    }
+  ],
+  "workflowNodes": [
+    {
+      "type": "resource.plugin",
+      "name": "gitlab"
+    }
+  ]
+}

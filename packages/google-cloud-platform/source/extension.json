@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "agent-system.extension-package.v1",
+  "extensionId": "google-cloud-platform",
+  "displayName": "Google Cloud Platform",
+  "version": "2.3.8",
+  "scope": "project",
+  "description": "Project-scoped Google Cloud CLI Docker runtime, browser-based gcloud auth login, and the gcloud_cli OpenCode Tool.",
+  "backend": {
+    "entry": "backend/entry.js",
+    "integrity": {
+      "backend/entry.js": "sha256-dfc82a819f8de3262b666693aad3fb536d1d0808397a7cc615210cb6b4345ab6"
+    },
+    "lifecycle": {
+      "install": "install"
+    }
+  },
+  "frontend": {
+    "entry": "frontend/entry.js",
+    "integrity": {
+      "frontend/entry.js": "sha256-659e8fc83cdddfb2f0b5b46cf3d87f9fad5f40392b5b9d0b75ae2a08ad07f559"
+    }
+  },
+  "configuration": {
+    "entry": "config/extension.json",
+    "integrity": {
+      "config/extension.json": "sha256-8727a26a1f06924b0f00ac95dac843c55f7edcd18f1b626cd3d0d91f7cdc1bea"
+    }
+  },
+  "resources": {
+    "plugins": [
+      {
+        "files": [
+          "plugins/google-cloud-platform/cli.ts"
+        ],
+        "path": "plugins/google-cloud-platform.ts",
+        "integrity": "sha256-99732afc0818d2bfa149be78fba31fa31b69368ee507675500b687194c78d842"
+      }
+    ]
+  },
+  "pluginContributions": [
+    {
+      "pluginName": "google-cloud-platform",
+      "contributions": [
+        {
+          "kind": "tool",
+          "name": "gcloud_cli"
+        }
+      ]
+    }
+  ],
+  "workflowNodes": [
+    {
+      "type": "resource.plugin",
+      "name": "google-cloud-platform"
+    }
+  ]
+}

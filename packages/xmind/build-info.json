@@ -1,0 +1,14 @@
+{
+  "extensionId": "xmind",
+  "version": "2.0.0",
+  "channel": "stable",
+  "tag": "xmind-2.0.0",
+  "sourceRevision": "b3040627401c9fe6a6955051022f0e602d602398",
+  "sourceTree": "eeca03e6604218c009eb9a223d1ed3756442f46d",
+  "sourcePath": "backend/extension-packages/xmind",
+  "artifact": {
+    "name": "xmind-2.0.0.aicxt",
+    "size": 34906,
+    "sha256": "3e2eac91d38532e731b6baf149f58c331f83a3d28b2e84000b6a36b238d0137d"
+  }
+}

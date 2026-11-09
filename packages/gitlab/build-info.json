@@ -1,0 +1,14 @@
+{
+  "extensionId": "gitlab",
+  "version": "2.0.0",
+  "channel": "stable",
+  "tag": "gitlab-2.0.0",
+  "sourceRevision": "b3040627401c9fe6a6955051022f0e602d602398",
+  "sourceTree": "d8279873be03fd60ccb0b3f25d2a1fa51524e0bc",
+  "sourcePath": "backend/extension-packages/gitlab",
+  "artifact": {
+    "name": "gitlab-2.0.0.aicxt",
+    "size": 10872,
+    "sha256": "02bf7749d73d9519cd76bb2462aec39fb032ca209af04006ef164eafae843a16"
+  }
+}

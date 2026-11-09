@@ -1,0 +1,14 @@
+{
+  "extensionId": "open-design",
+  "version": "2.0.0",
+  "channel": "stable",
+  "tag": "open-design-2.0.0",
+  "sourceRevision": "b3040627401c9fe6a6955051022f0e602d602398",
+  "sourceTree": "5bfe2f22eb5c28c58ca7ddb6624ddc7c73150b99",
+  "sourcePath": "backend/extension-packages/open-design",
+  "artifact": {
+    "name": "open-design-2.0.0.aicxt",
+    "size": 10147,
+    "sha256": "d7a0adad1b64b963c10d63c13ce3cc9832944cafcb05e22a9ab53aaca3de0f8c"
+  }
+}

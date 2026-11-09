@@ -1,0 +1,12 @@
+{
+  "extensionId": "open-design",
+  "repository": "agent-system",
+  "snapshotCommit": "b3040627401c9fe6a6955051022f0e602d602398",
+  "sourceRevision": "b3040627401c9fe6a6955051022f0e602d602398",
+  "sourceContentCommit": "5b4ef28dfa4a8a72baff42cc3066d6f716867676",
+  "sourcePath": "backend/extension-packages/open-design",
+  "sourceTree": "5bfe2f22eb5c28c58ca7ddb6624ddc7c73150b99",
+  "sourcePackageVersion": "1.21.2",
+  "releaseVersion": "2.0.0",
+  "notes": "封裝來源為固定 integration tree；套件 metadata 明列 canonical ID open-design 與既有 alias opendesign。"
+}

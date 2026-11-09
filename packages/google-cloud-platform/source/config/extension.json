@@ -1,0 +1,10 @@
+{
+  "platforms": [
+    {
+      "id": "google-cloud-platform",
+      "displayName": "Google Cloud Platform",
+      "description": "透過遠端瀏覽器完成 Google OAuth，並使用 Project 專屬 gcloud CLI 容器管理雲端資源。",
+      "shortName": "GCP"
+    }
+  ]
+}

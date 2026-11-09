@@ -1,0 +1,23 @@
+{
+  "$schema": "https://agent-system.local/schemas/extension-configuration.v1.json",
+  "platforms": [
+    {
+      "id": "azure-devops",
+      "displayName": "Azure DevOps",
+      "description": "連接 Organization、Project、Repos、Wiki、Boards 與 Work Items。",
+      "shortName": "AZ",
+      "tone": "azure",
+      "capabilities": ["core", "work", "work-items", "repositories", "wiki", "search", "test-plans", "advanced-security"]
+    }
+  ],
+  "deploymentPlatforms": [
+    {
+      "id": "azure-devops-pipelines",
+      "displayName": "Azure DevOps Pipelines",
+      "description": "管理 Pipeline、Build、Release、Artifacts 與部署狀態。",
+      "shortName": "CD",
+      "tone": "deployment",
+      "capabilities": ["pipelines", "builds", "artifacts", "environments"]
+    }
+  ]
+}

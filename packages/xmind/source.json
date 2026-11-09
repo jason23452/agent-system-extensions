@@ -1,0 +1,32 @@
+{
+  "extensionId": "xmind",
+  "repository": "agent-system",
+  "snapshotCommit": "b3040627401c9fe6a6955051022f0e602d602398",
+  "sourceRevision": "b3040627401c9fe6a6955051022f0e602d602398",
+  "sourceContentCommit": "3e39c46acddee78f21b10753adf04df382206c9a",
+  "sourcePath": "backend/extension-packages/xmind",
+  "sourceTree": "eeca03e6604218c009eb9a223d1ed3756442f46d",
+  "sourcePackageVersion": "1.0.0",
+  "releaseVersion": "2.0.0",
+  "supportingSources": [
+    {
+      "path": "backend/scripts/build-xmind-package.mjs",
+      "snapshotCommit": "b3040627401c9fe6a6955051022f0e602d602398",
+      "contentCommit": "3e39c46acddee78f21b10753adf04df382206c9a",
+      "blob": "b82d8063ae01f391f0a5e6c4d3c99eeb2510804b"
+    },
+    {
+      "path": "backend/scripts/xmind-to-markdown.ts",
+      "snapshotCommit": "b3040627401c9fe6a6955051022f0e602d602398",
+      "contentCommit": "3e39c46acddee78f21b10753adf04df382206c9a",
+      "blob": "cdb70b32493ec489d344e423e0999fe30837f1aa"
+    },
+    {
+      "path": "backend/scripts/xmind-edit.ts",
+      "snapshotCommit": "b3040627401c9fe6a6955051022f0e602d602398",
+      "contentCommit": "3e39c46acddee78f21b10753adf04df382206c9a",
+      "blob": "74e070e6ba4ecc15a5eda4bac9b04463cf3243fa"
+    }
+  ],
+  "notes": "封裝來源為固定 integration tree；builder/tools 由 supportingSources 追溯。"
+}

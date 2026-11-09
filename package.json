@@ -9,6 +9,8 @@
   "scripts": {
     "test": "node --test",
     "fixture:build": "node scripts/build-synthetic-fixture.js",
-    "fixture:verify": "node scripts/build-synthetic-fixture.js --verify"
+    "fixture:verify": "node scripts/build-synthetic-fixture.js --verify",
+    "extensions:build": "node scripts/build-extension-packages.js",
+    "extensions:verify": "node scripts/build-extension-packages.js --verify"
   }
 }

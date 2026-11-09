@@ -1,0 +1,14 @@
+{
+  "open-design": {
+    "type": "local",
+    "command": [
+      "npx",
+      "--yes",
+      "open-design-mcp@0.16.1"
+    ],
+    "environment": {
+      "OD_DAEMON_URL": "http://agent-system-open-design:7456"
+    },
+    "enabled": true
+  }
+}

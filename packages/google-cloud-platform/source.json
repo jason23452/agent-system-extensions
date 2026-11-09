@@ -1,0 +1,12 @@
+{
+  "extensionId": "google-cloud-platform",
+  "repository": "agent-system",
+  "snapshotCommit": "b3040627401c9fe6a6955051022f0e602d602398",
+  "sourceRevision": "b3040627401c9fe6a6955051022f0e602d602398",
+  "sourceContentCommit": "cb106e6b9173af43176d0eb03cfcb1eea77e9820",
+  "sourcePath": "backend/extension-packages/google-cloud-platform",
+  "sourceTree": "c1b509c5f6b0b1e289c78df532c8da18fd3cf840",
+  "sourcePackageVersion": "2.3.8",
+  "releaseVersion": "2.0.0",
+  "notes": "封裝來源為固定 integration tree；sourceContentCommit 是此 package path 最後異動的原始 commit。"
+}

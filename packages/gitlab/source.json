@@ -1,0 +1,12 @@
+{
+  "extensionId": "gitlab",
+  "repository": "agent-system",
+  "snapshotCommit": "b3040627401c9fe6a6955051022f0e602d602398",
+  "sourceRevision": "b3040627401c9fe6a6955051022f0e602d602398",
+  "sourceContentCommit": "3e39c46acddee78f21b10753adf04df382206c9a",
+  "sourcePath": "backend/extension-packages/gitlab",
+  "sourceTree": "d8279873be03fd60ccb0b3f25d2a1fa51524e0bc",
+  "sourcePackageVersion": "2.1.2",
+  "releaseVersion": "2.0.0",
+  "notes": "source tree 以固定 integration snapshot 封裝；此 2.0.0 首版包含 Project URL、驗證後同步與雙 target 可續跑實作。"
+}

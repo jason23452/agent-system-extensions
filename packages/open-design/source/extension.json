@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "agent-system.extension-package.v1",
+  "extensionId": "open-design",
+  "displayName": "Open Design MCP",
+  "version": "1.21.2",
+  "description": "使用官方 Open Design v0.18.0 GHCR image，按 Project 啟動獨立 container，並同步 BFF OpenCode provider 與 MCP。",
+  "backend": {
+    "entry": "backend/entry.js",
+    "integrity": {
+      "backend/entry.js": "sha256-1447a3c596b84851695326f4759df41f8c65a87c5f3c0ed261da01358f063928"
+    },
+    "lifecycle": {
+      "install": "install",
+      "restart": true
+    }
+  },
+  "frontend": {
+    "entry": "frontend/entry.js",
+    "integrity": {
+      "frontend/entry.js": "sha256-aaa2d1b9b7e83755c1c57679786c59d1c1fdc0059f7f80f1c55bcddc95659b92"
+    }
+  },
+  "resources": {
+    "mcp": [
+      "mcp/open-design.json"
+    ]
+  },
+  "metadata": {
+    "canonicalId": "open-design",
+    "aliases": [
+      "opendesign"
+    ]
+  }
+}
