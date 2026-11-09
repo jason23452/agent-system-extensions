@@ -22,6 +22,26 @@
       }
     },
     {
+      "id": "gitlab",
+      "version": "2.0.0",
+      "channel": "stable",
+      "tag": "gitlab-2.0.0",
+      "asset": {
+        "name": "gitlab-2.0.0.aicxt",
+        "url": "https://github.com/jason23452/agent-system-extensions/releases/download/gitlab-2.0.0/gitlab-2.0.0.aicxt",
+        "sha256": "02bf7749d73d9519cd76bb2462aec39fb032ca209af04006ef164eafae843a16",
+        "size": 10872
+      },
+      "compatibility": {
+        "agentSystem": "*"
+      },
+      "metadata": {
+        "displayName": "GitLab Skills",
+        "description": "Project-scoped GitLab Skills Plugin with separately saved repository URL, validated synchronization, and a source-confined selector Tool.",
+        "package": {}
+      }
+    },
+    {
       "id": "google-cloud-platform",
       "version": "2.0.0",
       "channel": "stable",
