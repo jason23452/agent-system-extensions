@@ -1,36 +1,36 @@
-# Agent System Extensions distribution repository
+# Agent System Extensions 分發 repo
 
-This public repository owns the shared Extension Catalog contract, exact-release downloader, catalog-only updater, and release automation. It does not contain the five product Extensions yet; ticket 02 owns those sources and their first product releases.
+此公開 repo 維護共用 Extension Catalog 契約、精確版本下載器、僅更新 catalog 的 CLI，以及發布自動化。目前尚未包含五套正式 Extension；其來源與首批正式版由 Ticket 02 負責。
 
-## Release contract
+## Release 契約
 
-- Extension release tags are exactly `<extensionId>-<SemVer>`, for example `gitlab-2.1.0-dev.1`. The tag, root `.aicxt` `extension.json` identity/version and release prerelease marker must agree.
-- A release contains exactly one package asset named `<tag>.aicxt`, for example `gitlab-2.1.0-dev.1.aicxt`. The workflow validates the ZIP archive and manifest, uploads the asset without replacing existing bytes, then reads it back anonymously and verifies its size and SHA-256.
-- Stable SemVer versions map to `stable`; SemVer prereleases map to `dev` and require a GitHub prerelease. Build metadata does not change the channel.
-- `catalog.json` is schema v1 (`packages/cli/schemas/catalog-v1.schema.json`). Entries pin `id`, `version`, `channel`, tag, exact public asset URL, SHA-256, size, host compatibility and package metadata. Catalog selection never uses a repository-wide `latest` release.
-- Catalog updates are monotonic. GitHub Contents API writes include the current file SHA; on a concurrent-write conflict the job re-reads and unions the latest catalog with published releases before retrying. Conflicting metadata for the same `id`/version fails rather than overwriting a published identity.
-- The `synthetic-` ID namespace is reserved for distribution tests. Its public workflow release gets an attached `synthetic-catalog.json` for anonymous verification, but is never added to official `catalog.json`.
-- CLI releases use `cli/v<version>` tags and contain a dependency-free npm `.tgz`. The package is released only as a GitHub Release asset; it is not published to the npm registry.
+- Extension release tag 格式固定為 `<extensionId>-<SemVer>`，例如 `gitlab-2.1.0-dev.1`。Tag、`.aicxt` 根目錄 `extension.json` 的身分／版本，以及 Release prerelease 標記必須一致。
+- 每個 Release 恰有一個名為 `<tag>.aicxt` 的套件 asset，例如 `gitlab-2.1.0-dev.1.aicxt`。Workflow 會驗證 ZIP archive 與 manifest、保留既有 asset 位元組，並匿名讀回確認大小與 SHA-256。
+- Stable SemVer 對應 `stable`；SemVer prerelease 對應 `dev`，且 GitHub Release 必須標記為 prerelease。Build metadata 不改變 channel。
+- `catalog.json` 採 schema v1（`packages/cli/schemas/catalog-v1.schema.json`）。每筆項目固定 `id`、`version`、`channel`、tag、公開 asset URL、SHA-256、大小、host 相容性與套件 metadata。Catalog 選版不使用 repo-wide `latest`。
+- Catalog 更新只會累加，不移除舊版本。GitHub Contents API 寫入會附上目前檔案 SHA；併發衝突時，job 重新讀取最新 catalog，與已發布 Release 合併後重試。同一 `id`／version 的 metadata 衝突會直接失敗，不覆寫已發布身分。
+- `synthetic-` ID namespace 專供分發測試。公開 workflow 會在測試 Release 附加 `synthetic-catalog.json` 供匿名驗證，但不會寫入正式 `catalog.json`。
+- CLI 使用 `cli/v<version>` tag 發布零相依 npm `.tgz`。套件只作為 GitHub Release asset 發布，不會上傳 npm registry。
 
-## CLI use (Node.js 24+)
+## CLI 使用（Node.js 24+）
 
-### Exact package download
+### 精確版本套件下載
 
 ```powershell
 npx --yes --package="https://github.com/jason23452/agent-system-extensions/releases/download/cli/v1.0.0/agent-system-extension-distribution-cli-1.0.0.tgz" -- aicxt-download --id gitlab --channel stable --version 2.0.0 --output gitlab-2.0.0.aicxt
 ```
 
-The command downloads only the exact catalog entry and verifies its bytes before writing the destination. Missing versions and hash mismatches fail; there is no `latest` fallback. Use `--catalog <url>` to supply a different catalog source explicitly.
+此命令只下載 catalog 指定的精確項目，並在寫入目的檔前驗證位元組。版本不存在或 hash 不符時會失敗，不會 fallback 到 `latest`。如需指定其他 catalog 來源，使用 `--catalog <url>`。
 
-### Update only the catalog
+### 僅更新 catalog
 
 ```powershell
 npx --yes --package="https://github.com/jason23452/agent-system-extensions/releases/download/cli/v1.0.0/agent-system-extension-distribution-cli-1.0.0.tgz" -- extension-catalog --output .\catalog.json
 ```
 
-This fetches and validates the current complete public `catalog.json`; it does not fetch `.aicxt` assets or install/switch an Extension. Without `--output`, validated JSON is written to stdout.
+此命令取得並驗證目前完整的公開 `catalog.json`；不會下載 `.aicxt` asset，也不會安裝或切換 Extension。未指定 `--output` 時，通過驗證的 JSON 會輸出至 stdout。
 
-### Local installation
+### 本機安裝
 
 ```powershell
 Invoke-WebRequest "https://github.com/jason23452/agent-system-extensions/releases/download/cli/v1.0.0/agent-system-extension-distribution-cli-1.0.0.tgz" -OutFile .\agent-system-extension-distribution-cli-1.0.0.tgz
@@ -39,11 +39,11 @@ aicxt-download --help
 extension-catalog --help
 ```
 
-On Linux, use `curl -fL <release-asset-url> -o agent-system-extension-distribution-cli-1.0.0.tgz`, then `npm install --global ./agent-system-extension-distribution-cli-1.0.0.tgz`.
+Linux 請使用 `curl -fL <release-asset-url> -o agent-system-extension-distribution-cli-1.0.0.tgz` 下載，再執行 `npm install --global ./agent-system-extension-distribution-cli-1.0.0.tgz`。
 
-## Maintainer workflow
+## 維護者流程
 
-- Run `npm test` on Node 24. It uses only the built-in Node test runner and has no install step.
-- `npm run fixture:build` deterministically rebuilds the reserved synthetic `.aicxt`; `npm run fixture:verify` checks the tracked archive is reproducible.
-- Publish an Extension by adding its validated `.aicxt` at `packages/<extensionId>/<extensionId>-<SemVer>.aicxt`, then pushing the exact matching tag. The release workflow creates the immutable Release and updates the full catalog.
-- Publish a CLI release by pushing `cli/v<package-version>`. The workflow packs and attaches the `.tgz`; no `npm publish` is used.
+- 使用 Node 24 執行 `npm test`；測試只使用 Node 內建 test runner，無需安裝步驟。
+- `npm run fixture:build` 可確定性地重建保留的 synthetic `.aicxt`；`npm run fixture:verify` 驗證已追蹤 archive 可重現。
+- 發布 Extension 時，先將已驗證的 `.aicxt` 放在 `packages/<extensionId>/<extensionId>-<SemVer>.aicxt`，再推送完全相符的 tag。Release workflow 會建立不可變 Release 並更新完整 catalog。
+- 發布 CLI 時推送 `cli/v<package-version>`。Workflow 會打包並附加 `.tgz`；不執行 `npm publish`。

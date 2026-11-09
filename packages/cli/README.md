@@ -1,8 +1,8 @@
-# Extension distribution CLI
+# Extension 分發 CLI
 
-Node.js 24 LTS CLI package exposing two separate commands:
+此 Node.js 24 LTS CLI 套件提供兩個職責分離的命令：
 
-- `aicxt-download`: downloads an exact `id` / `channel` / `version` catalog asset and verifies byte size and SHA-256 before publishing the output file.
-- `extension-catalog`: fetches and validates the latest complete public `catalog.json`; it never downloads or installs `.aicxt` assets.
+- `aicxt-download`：依精確的 `id`／`channel`／`version` 下載 catalog 指定 asset，寫入目的檔前驗證位元組大小與 SHA-256。
+- `extension-catalog`：取得並驗證最新完整的公開 `catalog.json`；不下載或安裝 `.aicxt` asset。
 
-Both commands are dependency-free and are shipped as a prebuilt npm tarball attached to the GitHub Release `cli/v<version>` in `jason23452/agent-system-extensions`.
+兩個命令均無相依套件，並以預先建置的 npm tarball 附加於 `jason23452/agent-system-extensions` 的 GitHub Release `cli/v<version>`。
