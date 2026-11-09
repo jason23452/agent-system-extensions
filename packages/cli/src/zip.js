@@ -32,7 +32,7 @@ function readUtf8(bytes, label) {
 }
 
 function validateEntryName(name) {
-  if (name.length === 0 || name.includes("\\") || name.includes("\0") || name.startsWith("/")) {
+  if (name.length === 0 || name.includes("\\") || name.includes("\0") || name.startsWith("/") || /^[A-Za-z]:/.test(name)) {
     fail("ZIP entry has an unsafe path");
   }
   const path = name.endsWith("/") ? name.slice(0, -1) : name;

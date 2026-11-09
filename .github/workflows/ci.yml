@@ -24,6 +24,6 @@ jobs:
       - name: Pack and launch both CLI entry points
         run: |
           npm pack ./packages/cli --pack-destination "$RUNNER_TEMP"
-          npm install --prefix "$RUNNER_TEMP/cli-install" "$RUNNER_TEMP/agent-system-extension-distribution-cli-1.0.0.tgz"
+          npm install --prefix "$RUNNER_TEMP/cli-install" "$RUNNER_TEMP/agent-system-extension-distribution-cli-1.0.1.tgz"
           "$RUNNER_TEMP/cli-install/node_modules/.bin/aicxt-download" --help
           "$RUNNER_TEMP/cli-install/node_modules/.bin/extension-catalog" --help

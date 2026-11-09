@@ -17,7 +17,7 @@
 ### 精確版本套件下載
 
 ```powershell
-npx --yes --package="https://github.com/jason23452/agent-system-extensions/releases/download/cli/v1.0.0/agent-system-extension-distribution-cli-1.0.0.tgz" -- aicxt-download --id gitlab --channel stable --version 2.0.0 --output gitlab-2.0.0.aicxt
+npx --yes --package="https://github.com/jason23452/agent-system-extensions/releases/download/cli/v1.0.1/agent-system-extension-distribution-cli-1.0.1.tgz" -- aicxt-download --id gitlab --channel stable --version 2.0.0 --output gitlab-2.0.0.aicxt
 ```
 
 此命令只下載 catalog 指定的精確項目，並在寫入目的檔前驗證位元組。版本不存在或 hash 不符時會失敗，不會 fallback 到 `latest`。如需指定其他 catalog 來源，使用 `--catalog <url>`。
@@ -25,7 +25,7 @@ npx --yes --package="https://github.com/jason23452/agent-system-extensions/relea
 ### 僅更新 catalog
 
 ```powershell
-npx --yes --package="https://github.com/jason23452/agent-system-extensions/releases/download/cli/v1.0.0/agent-system-extension-distribution-cli-1.0.0.tgz" -- extension-catalog --output .\catalog.json
+npx --yes --package="https://github.com/jason23452/agent-system-extensions/releases/download/cli/v1.0.1/agent-system-extension-distribution-cli-1.0.1.tgz" -- extension-catalog --output .\catalog.json
 ```
 
 此命令取得並驗證目前完整的公開 `catalog.json`；不會下載 `.aicxt` asset，也不會安裝或切換 Extension。未指定 `--output` 時，通過驗證的 JSON 會輸出至 stdout。
@@ -33,13 +33,13 @@ npx --yes --package="https://github.com/jason23452/agent-system-extensions/relea
 ### 本機安裝
 
 ```powershell
-Invoke-WebRequest "https://github.com/jason23452/agent-system-extensions/releases/download/cli/v1.0.0/agent-system-extension-distribution-cli-1.0.0.tgz" -OutFile .\agent-system-extension-distribution-cli-1.0.0.tgz
-npm install --global .\agent-system-extension-distribution-cli-1.0.0.tgz
+Invoke-WebRequest "https://github.com/jason23452/agent-system-extensions/releases/download/cli/v1.0.1/agent-system-extension-distribution-cli-1.0.1.tgz" -OutFile .\agent-system-extension-distribution-cli-1.0.1.tgz
+npm install --global .\agent-system-extension-distribution-cli-1.0.1.tgz
 aicxt-download --help
 extension-catalog --help
 ```
 
-Linux 請使用 `curl -fL <release-asset-url> -o agent-system-extension-distribution-cli-1.0.0.tgz` 下載，再執行 `npm install --global ./agent-system-extension-distribution-cli-1.0.0.tgz`。
+Linux 請使用 `curl -fL <release-asset-url> -o agent-system-extension-distribution-cli-1.0.1.tgz` 下載，再執行 `npm install --global ./agent-system-extension-distribution-cli-1.0.1.tgz`。
 
 ## 維護者流程
 

@@ -21,6 +21,11 @@ function hasOnlyKeys(value, keys, label) {
   for (const key of Object.keys(value)) if (!keys.includes(key)) fail(`${label} contains unsupported property ${key}`);
 }
 
+function hasValidAgentSystemCompatibility(compatibility) {
+  const value = compatibility.agentSystem;
+  return value === undefined || (typeof value === "string" && value.length > 0);
+}
+
 export function isSemVer(version) {
   if (typeof version !== "string") return false;
   const match = semverPattern.exec(version);
@@ -114,7 +119,7 @@ function validateEntry(entry, index, repository) {
   if (!Number.isSafeInteger(entry.asset.size) || entry.asset.size <= 0) fail(`${label}.asset.size must be a positive safe integer`);
 
   if (!isRecord(entry.compatibility)) fail(`${label}.compatibility must be an object`);
-  if (entry.compatibility.agentSystem !== undefined && typeof entry.compatibility.agentSystem !== "string") fail(`${label}.compatibility.agentSystem must be a string when present`);
+  if (!hasValidAgentSystemCompatibility(entry.compatibility)) fail(`${label}.compatibility.agentSystem must be a non-empty string when present`);
   if (!isRecord(entry.metadata)) fail(`${label}.metadata must be an object`);
   hasOnlyKeys(entry.metadata, ["displayName", "description", "package"], `${label}.metadata`);
   if (typeof entry.metadata.displayName !== "string" || entry.metadata.displayName.trim().length === 0 || entry.metadata.displayName.length > 200) fail(`${label}.metadata.displayName is invalid`);
@@ -146,7 +151,9 @@ function validateManifest(manifest) {
   if (!isSemVer(manifest.version)) throw new Error(".aicxt extension.json has an invalid SemVer version");
   if (manifest.compatibility !== undefined && !isRecord(manifest.compatibility)) throw new Error(".aicxt extension.json compatibility must be an object");
   if (manifest.metadata !== undefined && !isRecord(manifest.metadata)) throw new Error(".aicxt extension.json metadata must be an object");
-  if (manifest.compatibility?.agentSystem !== undefined && typeof manifest.compatibility.agentSystem !== "string") throw new Error(".aicxt extension.json compatibility.agentSystem must be a string");
+  if (manifest.compatibility !== undefined && !hasValidAgentSystemCompatibility(manifest.compatibility)) {
+    throw new Error(".aicxt extension.json compatibility.agentSystem must be a non-empty string when present");
+  }
   return manifest;
 }
 

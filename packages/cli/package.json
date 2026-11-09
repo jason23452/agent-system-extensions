@@ -1,6 +1,6 @@
 {
   "name": "@agent-system/extension-distribution-cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Exact Extension release downloader and read-only Extension Catalog updater",
   "type": "module",
   "engines": {

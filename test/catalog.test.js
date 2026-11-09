@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { catalogEntryFromRelease, mergeCatalogs, validateCatalog } from "../packages/cli/src/catalog.js";
-import { releaseFor } from "../test-support/fixtures.js";
+import { manifestFor, releaseFor } from "../test-support/fixtures.js";
 
 test("an empty versioned catalog is valid", () => {
   assert.equal(validateCatalog({ schemaVersion: 1, extensions: [] }), true);
@@ -79,6 +79,40 @@ test("release validation rejects tag, manifest, channel, asset and hash inconsis
     release: stable.release,
     assetBytes: Buffer.concat([stable.assetBytes, Buffer.from("tampered")]),
   }), /size|hash/i);
+});
+
+test("release validation rejects empty agentSystem compatibility in the manifest", () => {
+  const emptyManifestRelease = releaseFor({
+    manifest: { ...manifestFor(), compatibility: { agentSystem: "" } },
+  });
+  assert.throws(() => catalogEntryFromRelease({
+    release: emptyManifestRelease.release,
+    assetBytes: emptyManifestRelease.assetBytes,
+  }), /compatibility\.agentSystem/i);
+});
+
+test("catalog validation rejects empty agentSystem compatibility", () => {
+  const validRelease = releaseFor();
+  const validEntry = catalogEntryFromRelease({ release: validRelease.release, assetBytes: validRelease.assetBytes });
+  assert.throws(() => validateCatalog({
+    schemaVersion: 1,
+    extensions: [{ ...validEntry, compatibility: { ...validEntry.compatibility, agentSystem: "" } }],
+  }), /compatibility\.agentSystem/i);
+});
+
+test("missing, wildcard and SemVer-range agentSystem compatibility remain valid", () => {
+  const cases = [
+    { manifest: manifestFor(), expected: "*" },
+    { manifest: { ...manifestFor(), compatibility: { agentSystem: "*" } }, expected: "*" },
+    { manifest: { ...manifestFor(), compatibility: { agentSystem: ">=1.2.0 <2.0.0" } }, expected: ">=1.2.0 <2.0.0" },
+  ];
+
+  for (const { manifest, expected } of cases) {
+    const { release, assetBytes } = releaseFor({ manifest });
+    const entry = catalogEntryFromRelease({ release, assetBytes });
+    assert.equal(entry.compatibility.agentSystem, expected);
+    assert.equal(validateCatalog({ schemaVersion: 1, extensions: [entry] }), true);
+  }
 });
 
 test("catalog validation rejects malformed versions, incorrect channels, unsafe asset URLs and duplicate releases", () => {

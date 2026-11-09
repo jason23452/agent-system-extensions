@@ -13,41 +13,58 @@ function crc32(bytes) {
   return (value ^ 0xffffffff) >>> 0;
 }
 
-export function fixtureArchive(manifest) {
-  const name = Buffer.from("extension.json");
-  const content = Buffer.from(`${JSON.stringify(manifest)}\n`);
-  const crc = crc32(content);
-  const local = Buffer.alloc(30);
-  local.writeUInt32LE(0x04034b50, 0);
-  local.writeUInt16LE(20, 4);
-  local.writeUInt16LE(0x0800, 6);
-  local.writeUInt16LE(0, 8);
-  local.writeUInt32LE(crc, 14);
-  local.writeUInt32LE(content.length, 18);
-  local.writeUInt32LE(content.length, 22);
-  local.writeUInt16LE(name.length, 26);
-  const localRecord = Buffer.concat([local, name, content]);
+export function fixtureArchive(manifest, additionalEntries = []) {
+  const entries = [
+    { name: "extension.json", content: Buffer.from(`${JSON.stringify(manifest)}\n`) },
+    ...additionalEntries.map(({ name, content = "" }) => ({
+      name,
+      content: Buffer.from(content),
+    })),
+  ];
+  const localRecords = [];
+  const centralRecords = [];
+  let localOffset = 0;
 
-  const central = Buffer.alloc(46);
-  central.writeUInt32LE(0x02014b50, 0);
-  central.writeUInt16LE(20, 4);
-  central.writeUInt16LE(20, 6);
-  central.writeUInt16LE(0x0800, 8);
-  central.writeUInt16LE(0, 10);
-  central.writeUInt32LE(crc, 16);
-  central.writeUInt32LE(content.length, 20);
-  central.writeUInt32LE(content.length, 24);
-  central.writeUInt16LE(name.length, 28);
-  const centralRecord = Buffer.concat([central, name]);
+  for (const entry of entries) {
+    const name = Buffer.from(entry.name, "utf8");
+    const { content } = entry;
+    const crc = crc32(content);
+    const local = Buffer.alloc(30);
+    local.writeUInt32LE(0x04034b50, 0);
+    local.writeUInt16LE(20, 4);
+    local.writeUInt16LE(0x0800, 6);
+    local.writeUInt16LE(0, 8);
+    local.writeUInt32LE(crc, 14);
+    local.writeUInt32LE(content.length, 18);
+    local.writeUInt32LE(content.length, 22);
+    local.writeUInt16LE(name.length, 26);
+    const localRecord = Buffer.concat([local, name, content]);
+    localRecords.push(localRecord);
 
+    const central = Buffer.alloc(46);
+    central.writeUInt32LE(0x02014b50, 0);
+    central.writeUInt16LE(20, 4);
+    central.writeUInt16LE(20, 6);
+    central.writeUInt16LE(0x0800, 8);
+    central.writeUInt16LE(0, 10);
+    central.writeUInt32LE(crc, 16);
+    central.writeUInt32LE(content.length, 20);
+    central.writeUInt32LE(content.length, 24);
+    central.writeUInt16LE(name.length, 28);
+    central.writeUInt32LE(localOffset, 42);
+    centralRecords.push(Buffer.concat([central, name]));
+    localOffset += localRecord.length;
+  }
+
+  const centralSize = centralRecords.reduce((size, record) => size + record.length, 0);
   const end = Buffer.alloc(22);
   end.writeUInt32LE(0x06054b50, 0);
-  end.writeUInt16LE(1, 8);
-  end.writeUInt16LE(1, 10);
-  end.writeUInt32LE(centralRecord.length, 12);
-  end.writeUInt32LE(localRecord.length, 16);
+  end.writeUInt16LE(entries.length, 8);
+  end.writeUInt16LE(entries.length, 10);
+  end.writeUInt32LE(centralSize, 12);
+  end.writeUInt32LE(localOffset, 16);
 
-  return Buffer.concat([localRecord, centralRecord, end]);
+  return Buffer.concat([...localRecords, ...centralRecords, end]);
 }
 
 export function manifestFor({ extensionId = "synthetic-fixture", version = "1.2.3", metadata = {} } = {}) {
@@ -61,10 +78,10 @@ export function manifestFor({ extensionId = "synthetic-fixture", version = "1.2.
   };
 }
 
-export function releaseFor({ version = "1.2.3", prerelease = version.includes("-"), manifest = manifestFor({ version }), extensionId = "synthetic-fixture" } = {}) {
+export function releaseFor({ version = "1.2.3", prerelease = version.includes("-"), manifest = manifestFor({ version }), extensionId = "synthetic-fixture", additionalEntries = [] } = {}) {
   const tag = `${extensionId}-${version}`;
   const assetName = `${tag}.aicxt`;
-  const assetBytes = fixtureArchive({ ...manifest, extensionId });
+  const assetBytes = fixtureArchive({ ...manifest, extensionId }, additionalEntries);
   const digest = createHash("sha256").update(assetBytes).digest("hex");
   return {
     assetBytes,

@@ -25,4 +25,4 @@ jobs:
       - name: Publish immutable CLI Release asset (no npm registry publish)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node scripts/publish-cli-release.js "$GITHUB_REF_NAME" "$RUNNER_TEMP/agent-system-extension-distribution-cli-1.0.0.tgz"
+        run: node scripts/publish-cli-release.js "$GITHUB_REF_NAME" "$RUNNER_TEMP/agent-system-extension-distribution-cli-1.0.1.tgz"
