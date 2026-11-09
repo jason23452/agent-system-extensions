@@ -10,10 +10,12 @@ test("Azure DevOps credentials are encrypted and bound to their Project", async 
   const directory = await mkdtemp(join(tmpdir(), "azure-devops-package-test-"));
   const previousKey = process.env.EXTENSION_SECRET_KEY;
   const previousPath = process.env.ADO_CREDENTIAL_STORE_PATH;
+  const previousDataRoot = process.env.OPENCODE_DATA_ROOT;
   const secretKey = Buffer.alloc(32, 23).toString("hex");
   const token = "synthetic-ado-token-never-persisted-in-plain-text";
   process.env.EXTENSION_SECRET_KEY = secretKey;
   process.env.ADO_CREDENTIAL_STORE_PATH = join(directory, "credentials.json");
+  process.env.OPENCODE_DATA_ROOT = join(directory, "legacy-data");
 
   try {
     const manifest = JSON.parse(await readFile(new URL("extension.json", source), "utf8"));
@@ -61,6 +63,8 @@ test("Azure DevOps credentials are encrypted and bound to their Project", async 
     else process.env.EXTENSION_SECRET_KEY = previousKey;
     if (previousPath === undefined) delete process.env.ADO_CREDENTIAL_STORE_PATH;
     else process.env.ADO_CREDENTIAL_STORE_PATH = previousPath;
+    if (previousDataRoot === undefined) delete process.env.OPENCODE_DATA_ROOT;
+    else process.env.OPENCODE_DATA_ROOT = previousDataRoot;
     await rm(directory, { recursive: true, force: true });
   }
 });
