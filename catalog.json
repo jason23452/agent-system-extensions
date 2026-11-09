@@ -20,6 +20,26 @@
         "description": "以 Extension 驗證 Azure DevOps PAT，並管理 Git Repository、Pull Request 查詢與建立、Pipeline YAML 提交、Pipeline 定義、預覽、明確執行及 run 狀態查詢、Work Item 建立、查詢、revision 歷史與更新、Wiki、Git 身分、Project、Team、Board、Iteration、AssignedTo 與 Dashboard。",
         "package": {}
       }
+    },
+    {
+      "id": "google-cloud-platform",
+      "version": "2.0.0",
+      "channel": "stable",
+      "tag": "google-cloud-platform-2.0.0",
+      "asset": {
+        "name": "google-cloud-platform-2.0.0.aicxt",
+        "url": "https://github.com/jason23452/agent-system-extensions/releases/download/google-cloud-platform-2.0.0/google-cloud-platform-2.0.0.aicxt",
+        "sha256": "d9b41166dfd2e785b25dbb0a25ce375b65f94d575f0e870be32fab0c8125089a",
+        "size": 14328
+      },
+      "compatibility": {
+        "agentSystem": "*"
+      },
+      "metadata": {
+        "displayName": "Google Cloud Platform",
+        "description": "Project-scoped Google Cloud CLI Docker runtime, browser-based gcloud auth login, and the gcloud_cli OpenCode Tool.",
+        "package": {}
+      }
     }
   ]
 }
