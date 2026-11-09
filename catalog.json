@@ -85,6 +85,38 @@
           ]
         }
       }
+    },
+    {
+      "id": "xmind",
+      "version": "2.0.0",
+      "channel": "stable",
+      "tag": "xmind-2.0.0",
+      "asset": {
+        "name": "xmind-2.0.0.aicxt",
+        "url": "https://github.com/jason23452/agent-system-extensions/releases/download/xmind-2.0.0/xmind-2.0.0.aicxt",
+        "sha256": "3e2eac91d38532e731b6baf149f58c331f83a3d28b2e84000b6a36b238d0137d",
+        "size": 34906
+      },
+      "compatibility": {
+        "agentSystem": "*"
+      },
+      "metadata": {
+        "displayName": "XMind",
+        "description": "XMind .xmind 讀取、轉 Markdown、安全編輯與 AI 節點延伸 Agent package。",
+        "package": {
+          "installMode": "workflow-command-extend",
+          "packageFormat": ".aicxt",
+          "workflowId": "workflow-xmind",
+          "capabilities": [
+            "xmind.read",
+            "xmind.to-markdown",
+            "xmind.edit",
+            "xmind.generate",
+            "xmind.plan"
+          ],
+          "extendResources": true
+        }
+      }
     }
   ]
 }
