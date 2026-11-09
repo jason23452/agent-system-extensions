@@ -60,6 +60,31 @@
         "description": "Project-scoped Google Cloud CLI Docker runtime, browser-based gcloud auth login, and the gcloud_cli OpenCode Tool.",
         "package": {}
       }
+    },
+    {
+      "id": "open-design",
+      "version": "2.0.0",
+      "channel": "stable",
+      "tag": "open-design-2.0.0",
+      "asset": {
+        "name": "open-design-2.0.0.aicxt",
+        "url": "https://github.com/jason23452/agent-system-extensions/releases/download/open-design-2.0.0/open-design-2.0.0.aicxt",
+        "sha256": "d7a0adad1b64b963c10d63c13ce3cc9832944cafcb05e22a9ab53aaca3de0f8c",
+        "size": 10147
+      },
+      "compatibility": {
+        "agentSystem": "*"
+      },
+      "metadata": {
+        "displayName": "Open Design MCP",
+        "description": "使用官方 Open Design v0.18.0 GHCR image，按 Project 啟動獨立 container，並同步 BFF OpenCode provider 與 MCP。",
+        "package": {
+          "canonicalId": "open-design",
+          "aliases": [
+            "opendesign"
+          ]
+        }
+      }
     }
   ]
 }
