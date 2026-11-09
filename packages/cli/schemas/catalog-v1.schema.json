@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/jason23452/agent-system-extensions/main/packages/cli/schemas/catalog-v1.schema.json",
+  "title": "Agent System Extension Catalog v1",
+  "description": "Complete, immutable Extension release identities published by agent-system-extensions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "extensions"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "extensions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/release" }
+    }
+  },
+  "$defs": {
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "channel", "tag", "asset", "compatibility", "metadata"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$" },
+        "version": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$" },
+        "channel": { "enum": ["stable", "dev"] },
+        "tag": { "type": "string", "minLength": 1 },
+        "asset": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "url", "sha256", "size"],
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "url": { "type": "string", "format": "uri" },
+            "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+            "size": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "compatibility": {
+          "type": "object",
+          "description": "Declared host compatibility; agentSystem is a SemVer range, with * meaning no range declared.",
+          "properties": { "agentSystem": { "type": "string", "minLength": 1 } },
+          "additionalProperties": true
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["displayName", "description", "package"],
+          "properties": {
+            "displayName": { "type": "string", "minLength": 1, "maxLength": 200 },
+            "description": { "type": "string", "maxLength": 2000 },
+            "package": { "type": "object", "additionalProperties": true }
+          }
+        }
+      }
+    }
+  }
+}

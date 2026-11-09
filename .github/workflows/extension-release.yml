@@ -1,0 +1,56 @@
+name: Extension Release
+
+on:
+  push:
+    tags:
+      - '*-*'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm test
+      - if: startsWith(github.ref_name, 'synthetic-')
+        run: npm run fixture:verify
+      - name: Validate, publish and anonymously verify the exact package asset
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/publish-extension-release.js "$GITHUB_REF_NAME"
+      - name: Generate isolated synthetic catalog from public Release metadata
+        if: startsWith(github.ref_name, 'synthetic-')
+        run: node scripts/build-synthetic-catalog.js "$GITHUB_REF_NAME" "$RUNNER_TEMP/synthetic-catalog.json"
+      - name: Attach the pipeline-generated synthetic catalog
+        if: startsWith(github.ref_name, 'synthetic-')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/attach-release-asset.js "$GITHUB_REF_NAME" "$RUNNER_TEMP/synthetic-catalog.json" synthetic-catalog.json
+
+  update-catalog:
+    needs: publish
+    if: ${{ !startsWith(github.ref_name, 'synthetic-') }}
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.repository }}-catalog-main
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Rebuild monotonic catalog with optimistic concurrent-write retries
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/update-catalog.js "$RUNNER_TEMP/catalog.json"

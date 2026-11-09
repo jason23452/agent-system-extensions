@@ -1,0 +1,14 @@
+{
+  "name": "agent-system-extensions",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "test": "node --test",
+    "fixture:build": "node scripts/build-synthetic-fixture.js",
+    "fixture:verify": "node scripts/build-synthetic-fixture.js --verify"
+  }
+}

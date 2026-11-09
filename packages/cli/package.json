@@ -1,0 +1,19 @@
+{
+  "name": "@agent-system/extension-distribution-cli",
+  "version": "1.0.0",
+  "description": "Exact Extension release downloader and read-only Extension Catalog updater",
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "bin": {
+    "aicxt-download": "./bin/aicxt-download.js",
+    "extension-catalog": "./bin/extension-catalog.js"
+  },
+  "files": [
+    "bin/",
+    "schemas/",
+    "src/",
+    "README.md"
+  ]
+}

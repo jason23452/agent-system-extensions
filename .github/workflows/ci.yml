@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node --version
+      - run: npm test
+      - run: npm run fixture:verify
+      - name: Pack and launch both CLI entry points
+        run: |
+          npm pack ./packages/cli --pack-destination "$RUNNER_TEMP"
+          npm install --prefix "$RUNNER_TEMP/cli-install" "$RUNNER_TEMP/agent-system-extension-distribution-cli-1.0.0.tgz"
+          "$RUNNER_TEMP/cli-install/node_modules/.bin/aicxt-download" --help
+          "$RUNNER_TEMP/cli-install/node_modules/.bin/extension-catalog" --help

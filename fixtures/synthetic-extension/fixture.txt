@@ -1,0 +1,1 @@
+Synthetic distribution fixture only. This file does not implement or represent a product Extension.
